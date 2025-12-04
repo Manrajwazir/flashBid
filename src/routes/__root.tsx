@@ -2,6 +2,7 @@ import { Outlet, createRootRoute, HeadContent, Scripts } from '@tanstack/react-r
 
 import type { ReactNode } from 'react'
 import '../styles.css'
+import { Navbar } from '../components/Navbar'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -17,6 +18,7 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <RootDocument>
+      <Navbar />
       <Outlet />
     </RootDocument>
   )
