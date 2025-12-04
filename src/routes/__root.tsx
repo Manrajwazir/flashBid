@@ -1,45 +1,41 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router';
+import { Outlet, createRootRoute, HeadContent, Scripts } from '@tanstack/react-router'
 
-import Header from '../components/Header';
-
-import appCss from '../styles.css?url';
+import type { ReactNode } from 'react'
+import '../styles.css'
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
-      {
-        charSet: 'utf-8',
-      },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: 'Todo App',
-      },
-    ],
-    links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: 'FlashBid ⚡️' },
     ],
   }),
+  component: RootComponent,
+})
 
-  shellComponent: RootDocument,
-});
-
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootComponent() {
   return (
-    <html lang="en">
+    <RootDocument>
+      <Outlet />
+    </RootDocument>
+  )
+}
+
+function RootDocument({ children }: { children: ReactNode }) {
+  return (
+    <html>
       <head>
+        {/* 3. Use HeadContent instead of Meta */}
         <HeadContent />
       </head>
       <body>
-        <Header />
-        {children}
+        <div className="min-h-screen bg-gray-50 text-black">
+          {children}
+        </div>
+        {/* 4. Use Scripts (now imported from router) */}
         <Scripts />
       </body>
     </html>
-  );
+  )
 }
