@@ -1,27 +1,64 @@
-import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { useSession } from '../lib/auth-client'
-import { useState } from 'react'
+import { createFileRoute } from '@tanstack/react-router'
+import { useSession, getCurrentUserId } from '../lib/auth-client'
+import { useState, useEffect } from 'react'
 import { getUserBids, getUserAuctions, deleteAuction } from '../server/functions'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 
 export const Route = createFileRoute('/dashboard')({
     component: DashboardPage,
-    loader: async () => {
-        const [bids, auctions] = await Promise.all([
-            getUserBids(),
-            getUserAuctions(),
-        ])
-        return { bids, auctions }
-    },
 })
 
 function DashboardPage() {
     const { data: session, isPending } = useSession()
-    const loaderData = Route.useLoaderData()
+    const [bids, setBids] = useState<any[]>([])
+    const [auctions, setAuctions] = useState<any[]>([])
+    const [dataLoading, setDataLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'bids' | 'listings'>('bids')
     const [isDeleting, setIsDeleting] = useState<string | null>(null)
-    const router = useRouter()
+
+    // Load data on client side when session is available
+    useEffect(() => {
+        async function loadData() {
+            const userId = getCurrentUserId()
+            if (!userId) {
+                setDataLoading(false)
+                return
+            }
+
+            try {
+                const [bidsResult, auctionsResult] = await Promise.all([
+                    getUserBids({ data: { userId } } as any),
+                    getUserAuctions({ data: { userId } } as any),
+                ])
+                setBids(bidsResult)
+                setAuctions(auctionsResult)
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error)
+            } finally {
+                setDataLoading(false)
+            }
+        }
+
+        if (!isPending && session?.user) {
+            loadData()
+        } else if (!isPending) {
+            setDataLoading(false)
+        }
+    }, [isPending, session])
+
+    // Refresh data function
+    const refreshData = async () => {
+        const userId = getCurrentUserId()
+        if (!userId) return
+
+        const [bidsResult, auctionsResult] = await Promise.all([
+            getUserBids({ data: { userId } } as any),
+            getUserAuctions({ data: { userId } } as any),
+        ])
+        setBids(bidsResult)
+        setAuctions(auctionsResult)
+    }
 
     // Redirect if not logged in
     if (!isPending && !session?.user) {
@@ -29,7 +66,7 @@ function DashboardPage() {
         return null
     }
 
-    if (isPending) {
+    if (isPending || dataLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -40,10 +77,13 @@ function DashboardPage() {
     const handleDelete = async (auctionId: string) => {
         if (!confirm('Are you sure you want to delete this auction?')) return
 
+        const userId = getCurrentUserId()
+        if (!userId) return
+
         setIsDeleting(auctionId)
         try {
-            await deleteAuction({ data: { auctionId } } as any)
-            router.invalidate()
+            await deleteAuction({ data: { auctionId, userId } } as any)
+            await refreshData()
         } catch (error: any) {
             alert(error.message || 'Failed to delete auction')
         } finally {
@@ -71,7 +111,7 @@ function DashboardPage() {
                                     : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                                     }`}
                             >
-                                My Bids ({loaderData.bids.length})
+                                My Bids ({bids.length})
                             </button>
                             <button
                                 onClick={() => setActiveTab('listings')}
@@ -80,7 +120,7 @@ function DashboardPage() {
                                     : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                                     }`}
                             >
-                                My Listings ({loaderData.auctions.length})
+                                My Listings ({auctions.length})
                             </button>
                         </nav>
                     </div>
@@ -88,10 +128,10 @@ function DashboardPage() {
                     {/* Tab Content */}
                     <div className="p-6">
                         {activeTab === 'bids' ? (
-                            <MyBids bids={loaderData.bids} />
+                            <MyBids bids={bids} />
                         ) : (
                             <MyListings
-                                auctions={loaderData.auctions}
+                                auctions={auctions}
                                 onDelete={handleDelete}
                                 isDeleting={isDeleting}
                             />
