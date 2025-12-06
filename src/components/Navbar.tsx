@@ -12,12 +12,12 @@ export function Navbar() {
     }
 
     return (
-        <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-200">
+        <nav className="sticky top-0 z-50 bg-[#1a1025]/95 backdrop-blur-xl border-b border-[#3d2a54]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2 group">
-                        <span className="text-2xl font-black text-gray-900 group-hover:text-blue-600 transition-colors">
+                        <span className="text-2xl font-black text-white group-hover:text-purple-400 transition-colors">
                             FlashBid
                         </span>
                         <span className="text-2xl group-hover:scale-110 transition-transform">⚡️</span>
@@ -27,7 +27,7 @@ export function Navbar() {
                     <div className="hidden md:flex items-center gap-6">
                         <Link
                             to="/"
-                            className="text-gray-700 hover:text-blue-600 font-semibold transition-colors"
+                            className="text-gray-300 hover:text-purple-400 font-semibold transition-colors"
                         >
                             Browse
                         </Link>
@@ -36,29 +36,29 @@ export function Navbar() {
                             <>
                                 <a
                                     href="/sell"
-                                    className="text-gray-700 hover:text-blue-600 font-semibold transition-colors"
+                                    className="text-gray-300 hover:text-purple-400 font-semibold transition-colors"
                                 >
                                     Sell
                                 </a>
                                 <a
                                     href="/dashboard"
-                                    className="text-gray-700 hover:text-blue-600 font-semibold transition-colors"
+                                    className="text-gray-300 hover:text-purple-400 font-semibold transition-colors"
                                 >
                                     Dashboard
                                 </a>
 
                                 {/* User Menu */}
-                                <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+                                <div className="flex items-center gap-3 pl-4 border-l border-[#3d2a54]">
                                     <img
-                                        src={session.user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name || 'User')}&background=3B82F6&color=fff`}
+                                        src={session.user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name || 'User')}&background=7c3aed&color=fff`}
                                         alt={session.user.name || 'User'}
-                                        className="w-9 h-9 rounded-full ring-2 ring-blue-500"
+                                        className="w-9 h-9 rounded-md ring-2 ring-purple-500"
                                     />
                                     <div className="flex flex-col">
-                                        <span className="text-sm font-bold text-gray-900">{session.user.name}</span>
+                                        <span className="text-sm font-bold text-white">{session.user.name}</span>
                                         <button
                                             onClick={handleSignOut}
-                                            className="text-xs text-gray-500 hover:text-red-600 transition-colors text-left"
+                                            className="text-xs text-gray-400 hover:text-red-400 transition-colors text-left"
                                         >
                                             Sign Out
                                         </button>
@@ -68,7 +68,7 @@ export function Navbar() {
                         ) : (
                             <a
                                 href="/login"
-                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors"
+                                className="px-6 py-2 bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-400 hover:to-violet-500 text-white rounded-md font-bold transition-all"
                             >
                                 Sign In
                             </a>
@@ -78,7 +78,7 @@ export function Navbar() {
                     {/* Mobile Menu Button */}
                     <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+                        className="md:hidden p-2 rounded-md hover:bg-[#2d1f40] text-gray-300"
                     >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             {mobileMenuOpen ? (
@@ -92,11 +92,11 @@ export function Navbar() {
 
                 {/* Mobile Menu */}
                 {mobileMenuOpen && (
-                    <div className="md:hidden py-4 border-t border-gray-200">
+                    <div className="md:hidden py-4 border-t border-[#3d2a54]">
                         <div className="flex flex-col gap-3">
                             <Link
                                 to="/"
-                                className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg font-semibold"
+                                className="px-4 py-2 text-gray-300 hover:bg-[#2d1f40] rounded-md font-semibold"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
                                 Browse
@@ -106,30 +106,30 @@ export function Navbar() {
                                 <>
                                     <a
                                         href="/sell"
-                                        className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg font-semibold"
+                                        className="px-4 py-2 text-gray-300 hover:bg-[#2d1f40] rounded-md font-semibold"
                                         onClick={() => setMobileMenuOpen(false)}
                                     >
                                         Sell
                                     </a>
                                     <a
                                         href="/dashboard"
-                                        className="px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg font-semibold"
+                                        className="px-4 py-2 text-gray-300 hover:bg-[#2d1f40] rounded-md font-semibold"
                                         onClick={() => setMobileMenuOpen(false)}
                                     >
                                         Dashboard
                                     </a>
-                                    <div className="px-4 py-2 border-t border-gray-200 mt-2">
+                                    <div className="px-4 py-2 border-t border-[#3d2a54] mt-2">
                                         <div className="flex items-center gap-3 mb-3">
                                             <img
-                                                src={session.user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name || 'User')}&background=3B82F6&color=fff`}
+                                                src={session.user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(session.user.name || 'User')}&background=7c3aed&color=fff`}
                                                 alt={session.user.name || 'User'}
-                                                className="w-10 h-10 rounded-full ring-2 ring-blue-500"
+                                                className="w-10 h-10 rounded-md ring-2 ring-purple-500"
                                             />
-                                            <span className="font-bold text-gray-900">{session.user.name}</span>
+                                            <span className="font-bold text-white">{session.user.name}</span>
                                         </div>
                                         <button
                                             onClick={handleSignOut}
-                                            className="w-full px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-semibold transition-colors"
+                                            className="w-full px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-md font-semibold transition-colors"
                                         >
                                             Sign Out
                                         </button>
@@ -138,7 +138,7 @@ export function Navbar() {
                             ) : (
                                 <a
                                     href="/login"
-                                    className="mx-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-center transition-colors"
+                                    className="mx-4 px-6 py-2 bg-gradient-to-r from-purple-500 to-violet-600 text-white rounded-md font-bold text-center transition-all"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     Sign In

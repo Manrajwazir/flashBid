@@ -38,29 +38,29 @@ function LoginPage() {
 
     if (isPending) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+            <div className="min-h-screen flex items-center justify-center bg-[#0f0a1a]">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading...</p>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto"></div>
+                    <p className="mt-4 text-gray-400">Loading...</p>
                 </div>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0f0a1a] via-[#1a1025] to-[#0f0a1a] px-4">
             <div className="max-w-md w-full">
                 {/* Logo Section */}
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center gap-2 mb-4">
-                        <h1 className="text-5xl font-black text-gray-900">FlashBid</h1>
+                        <h1 className="text-5xl font-black text-white">FlashBid</h1>
                         <span className="text-5xl">⚡️</span>
                     </div>
-                    <p className="text-gray-600 text-lg">Sign in to start bidding and selling</p>
+                    <p className="text-gray-400 text-lg">Sign in to start bidding and selling</p>
                 </div>
 
                 {/* Login Card */}
-                <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 p-8">
+                <div className="bg-[#1a1025] rounded-3xl shadow-2xl border border-[#3d2a54] p-8">
                     <div className="space-y-4">
                         {/* Google Login - Now uses demo login */}
                         <Button
@@ -89,7 +89,7 @@ function LoginPage() {
                 <div className="mt-8 text-center">
                     <button
                         onClick={() => window.location.href = '/'}
-                        className="text-gray-600 hover:text-gray-900 font-semibold transition-colors"
+                        className="text-gray-400 hover:text-purple-400 font-semibold transition-colors"
                     >
                         ← Back to Browse
                     </button>
@@ -98,3 +98,4 @@ function LoginPage() {
         </div>
     )
 }
+

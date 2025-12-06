@@ -7,41 +7,202 @@ interface GetAuctionsParams {
   minPrice?: number
   maxPrice?: number
   sortBy?: 'endingSoon' | 'priceLow' | 'priceHigh'
+  page?: number
+  limit?: number
+}
+
+// Rate limiting: Track last bid time per user (in memory for simplicity)
+const userLastBidTime = new Map<string, number>()
+const RATE_LIMIT_MS = 2000 // 2 seconds between bids
+
+// Calculate minimum bid increment (greater of $1 or 5% of current price)
+function getMinBidIncrement(currentPrice: number): number {
+  const fivePercent = currentPrice * 0.05
+  return Math.max(1, Math.ceil(fivePercent * 100) / 100)
+}
+
+// Broadcast bid update to WebSocket server
+async function broadcastBid(auctionId: string, newPrice: number, bidderId: string, bidderName?: string) {
+  try {
+    await fetch('http://localhost:3002/broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'BID_PLACED',
+        auctionId,
+        newPrice,
+        bidderId,
+        bidderName,
+        timestamp: new Date().toISOString(),
+      }),
+    })
+  } catch (err) {
+    // Don't fail the bid if broadcast fails
+    console.error('Failed to broadcast bid:', err)
+  }
 }
 
 export const getAuctions = createServerFn({ method: 'GET' })
   .handler(async (ctx) => {
     const params = (ctx as any).data as GetAuctionsParams | undefined
 
-    const where: any = { status: 'OPEN' }
+    // Calculate 12 hours ago for filtering ended auctions
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000)
+
+    // Base filter: OPEN auctions OR auctions that ended within the last 12 hours
+    const where: any = {
+      OR: [
+        { status: 'OPEN' },
+        {
+          status: 'CLOSED',
+          endsAt: { gte: twelveHoursAgo }
+        }
+      ]
+    }
 
     // Search filter
     if (params?.search) {
-      where.OR = [
-        { title: { contains: params.search, mode: 'insensitive' } },
-        { description: { contains: params.search, mode: 'insensitive' } },
+      where.AND = [
+        {
+          OR: [
+            { title: { contains: params.search, mode: 'insensitive' } },
+            { description: { contains: params.search, mode: 'insensitive' } },
+          ]
+        }
       ]
     }
 
     // Price filters
     if (params?.minPrice !== undefined || params?.maxPrice !== undefined) {
-      where.currentPrice = {}
-      if (params?.minPrice !== undefined) where.currentPrice.gte = params.minPrice
-      if (params?.maxPrice !== undefined) where.currentPrice.lte = params.maxPrice
+      const priceFilter: any = {}
+      if (params?.minPrice !== undefined) priceFilter.gte = params.minPrice
+      if (params?.maxPrice !== undefined) priceFilter.lte = params.maxPrice
+
+      if (where.AND) {
+        where.AND.push({ currentPrice: priceFilter })
+      } else {
+        where.AND = [{ currentPrice: priceFilter }]
+      }
     }
 
-    // Determine sort order
-    let orderBy: any = { endsAt: 'asc' } // default
-    if (params?.sortBy === 'priceLow') orderBy = { currentPrice: 'asc' }
-    else if (params?.sortBy === 'priceHigh') orderBy = { currentPrice: 'desc' }
-    else if (params?.sortBy === 'endingSoon') orderBy = { endsAt: 'asc' }
+    // Pagination
+    const page = params?.page || 1
+    const limit = params?.limit || 100
+    const skip = (page - 1) * limit
 
-    const auctions = await prisma.auction.findMany({
+    // First, get all auctions matching the filter
+    const allAuctions = await prisma.auction.findMany({
       where,
-      orderBy,
+      include: {
+        seller: {
+          select: { id: true, name: true, image: true },
+        },
+        _count: {
+          select: { bids: true },
+        },
+      },
     })
 
-    return auctions
+    // Helper function to check if auction is actually active (not ended)
+    const isActiveAuction = (auction: any) => {
+      const now = new Date()
+      return auction.status === 'OPEN' && new Date(auction.endsAt) > now
+    }
+
+    // Sort: Active auctions first (by endsAt ascending), then ended auctions (by endsAt descending)
+    const sortedAuctions = allAuctions.sort((a, b) => {
+      const aIsActive = isActiveAuction(a)
+      const bIsActive = isActiveAuction(b)
+
+      // If one is active and the other is not, active comes first
+      if (aIsActive && !bIsActive) return -1
+      if (!aIsActive && bIsActive) return 1
+
+      // Both are active: sort by endsAt ascending (ending soonest first)
+      if (aIsActive && bIsActive) {
+        return new Date(a.endsAt).getTime() - new Date(b.endsAt).getTime()
+      }
+
+      // Both are ended: sort by endsAt descending (most recently ended first)
+      return new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime()
+    })
+
+    // Apply custom sort if specified (only affects active auctions order within their group)
+    if (params?.sortBy === 'priceLow') {
+      sortedAuctions.sort((a, b) => {
+        const aIsActive = isActiveAuction(a)
+        const bIsActive = isActiveAuction(b)
+        if (aIsActive !== bIsActive) return aIsActive ? -1 : 1
+        if (aIsActive) return a.currentPrice - b.currentPrice
+        return new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime()
+      })
+    } else if (params?.sortBy === 'priceHigh') {
+      sortedAuctions.sort((a, b) => {
+        const aIsActive = isActiveAuction(a)
+        const bIsActive = isActiveAuction(b)
+        if (aIsActive !== bIsActive) return aIsActive ? -1 : 1
+        if (aIsActive) return b.currentPrice - a.currentPrice
+        return new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime()
+      })
+    }
+
+    // Apply pagination
+    const paginatedAuctions = sortedAuctions.slice(skip, skip + limit)
+    const total = sortedAuctions.length
+
+    return { auctions: paginatedAuctions, total, page, limit, totalPages: Math.ceil(total / limit) }
+  })
+
+// Get a single auction by ID with full details
+export const getAuctionById = createServerFn({ method: 'GET' })
+  .handler(async (ctx) => {
+    const data = (ctx as any).data as { auctionId: string }
+
+    const auction = await prisma.auction.findUnique({
+      where: { id: data.auctionId },
+      include: {
+        seller: {
+          select: { id: true, name: true, image: true, createdAt: true },
+        },
+        bids: {
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+          include: {
+            bidder: {
+              select: { id: true, name: true, image: true },
+            },
+          },
+        },
+        _count: {
+          select: { bids: true },
+        },
+      },
+    })
+
+    if (!auction) {
+      throw new Error('Auction not found')
+    }
+
+    return auction
+  })
+
+// Get bid history for an auction
+export const getAuctionBids = createServerFn({ method: 'GET' })
+  .handler(async (ctx) => {
+    const data = (ctx as any).data as { auctionId: string; limit?: number }
+
+    const bids = await prisma.bid.findMany({
+      where: { auctionId: data.auctionId },
+      orderBy: { createdAt: 'desc' },
+      take: data.limit || 20,
+      include: {
+        bidder: {
+          select: { id: true, name: true, image: true },
+        },
+      },
+    })
+
+    return bids
   })
 
 export const placeBid = createServerFn({ method: 'POST' })
@@ -54,27 +215,57 @@ export const placeBid = createServerFn({ method: 'POST' })
       return { success: false, error: 'You must be logged in to place a bid' }
     }
 
+    // Rate limiting check
+    const lastBidTime = userLastBidTime.get(userId)
+    if (lastBidTime && Date.now() - lastBidTime < RATE_LIMIT_MS) {
+      const waitTime = Math.ceil((RATE_LIMIT_MS - (Date.now() - lastBidTime)) / 1000)
+      return { success: false, error: `Please wait ${waitTime} second(s) before placing another bid` }
+    }
+
     const bidder = await prisma.user.findUnique({ where: { id: userId } })
     if (!bidder) {
       return { success: false, error: 'User not found' }
     }
 
     try {
-      await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx) => {
         const auction = await tx.auction.findUnique({
           where: { id: data.auctionId }
         })
 
-        if (!auction || auction.status !== 'OPEN') {
-          throw new Error("Auction is closed")
+        if (!auction) {
+          throw new Error('Auction not found')
         }
 
-        if (data.amount <= auction.currentPrice) {
-          throw new Error("Bid must be higher than current price")
+        if (auction.status !== 'OPEN') {
+          throw new Error('This auction is closed')
+        }
+
+        // Prevent seller from bidding on their own auction
+        if (auction.sellerId === userId) {
+          throw new Error('You cannot bid on your own auction')
+        }
+
+        // Check if auction has expired
+        if (new Date(auction.endsAt) < new Date()) {
+          // Auto-close the auction
+          await tx.auction.update({
+            where: { id: data.auctionId },
+            data: { status: 'CLOSED' }
+          })
+          throw new Error('This auction has ended')
+        }
+
+        // Calculate minimum bid
+        const minIncrement = getMinBidIncrement(auction.currentPrice)
+        const minBid = auction.currentPrice + minIncrement
+
+        if (data.amount < minBid) {
+          throw new Error(`Bid must be at least $${minBid.toFixed(2)} (minimum increment: $${minIncrement.toFixed(2)})`)
         }
 
         // Create Bid
-        await tx.bid.create({
+        const bid = await tx.bid.create({
           data: {
             amount: data.amount,
             auctionId: data.auctionId,
@@ -83,16 +274,28 @@ export const placeBid = createServerFn({ method: 'POST' })
         })
 
         // Update Auction
-        await tx.auction.update({
+        const updatedAuction = await tx.auction.update({
           where: { id: data.auctionId },
           data: { currentPrice: data.amount }
         })
+
+        return { bid, auction: updatedAuction }
       })
 
-      return { success: true }
+      // Update rate limit timestamp
+      userLastBidTime.set(userId, Date.now())
+
+      // Broadcast bid update to WebSocket server for real-time updates
+      await broadcastBid(data.auctionId, result.auction.currentPrice, bidder.id, bidder.name || undefined)
+
+      return {
+        success: true,
+        newPrice: result.auction.currentPrice,
+        bidId: result.bid.id
+      }
     } catch (error: any) {
       console.error(error)
-      return { success: false, error: error.message || "Bid failed" }
+      return { success: false, error: error.message || 'Bid failed' }
     }
   })
 
@@ -109,6 +312,18 @@ export const createAuction = createServerFn({ method: 'POST' })
 
     // Validate with Zod
     const validated = createAuctionSchema.parse(data)
+
+    // Validate image URL if provided
+    if (validated.imageUrl) {
+      try {
+        const url = new URL(validated.imageUrl)
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          throw new Error('Image URL must use HTTP or HTTPS')
+        }
+      } catch {
+        throw new Error('Invalid image URL format')
+      }
+    }
 
     const auction = await prisma.auction.create({
       data: {
@@ -211,24 +426,62 @@ export const deleteAuction = createServerFn({ method: 'POST' })
     return { success: true }
   })
 
+// Close expired auctions (can be called by a cron job)
+export const closeExpiredAuctions = createServerFn({ method: 'POST' })
+  .handler(async () => {
+    const result = await prisma.auction.updateMany({
+      where: {
+        status: 'OPEN',
+        endsAt: { lt: new Date() },
+      },
+      data: { status: 'CLOSED' },
+    })
+
+    return { closedCount: result.count }
+  })
+
 // ======== AUTH FUNCTIONS ========
 
-// Sign in with demo user - returns user data for client to store
+// Generate random string for unique demo users
+function generateRandomId(length: number = 8): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  let result = ''
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
+// Fun adjectives and nouns for random usernames
+const adjectives = ['Swift', 'Bold', 'Clever', 'Lucky', 'Rapid', 'Smart', 'Quick', 'Sharp', 'Bright', 'Cool']
+const nouns = ['Bidder', 'Trader', 'Hunter', 'Seeker', 'Finder', 'Dealer', 'Hawk', 'Fox', 'Wolf', 'Eagle']
+
+function generateRandomName(): string {
+  const adj = adjectives[Math.floor(Math.random() * adjectives.length)]
+  const noun = nouns[Math.floor(Math.random() * nouns.length)]
+  const num = Math.floor(Math.random() * 1000)
+  return `${adj}${noun}${num}`
+}
+
+// Sign in with demo user - creates a UNIQUE user each time
 export const signInDemo = createServerFn({ method: 'POST' })
   .handler(async () => {
     try {
-      // Create a demo user
-      const demoUser = await prisma.user.upsert({
-        where: { email: 'demo@flashbid.com' },
-        update: {},
-        create: {
-          email: 'demo@flashbid.com',
-          name: 'Demo User',
+      const uniqueId = generateRandomId()
+      const randomName = generateRandomName()
+      const email = `demo_${uniqueId}@flashbid.com`
+
+      // Create a new unique demo user
+      const demoUser = await prisma.user.create({
+        data: {
+          email,
+          name: randomName,
           emailVerified: true,
-          image: 'https://ui-avatars.com/api/?name=Demo+User&background=3B82F6&color=fff',
+          image: `https://ui-avatars.com/api/?name=${encodeURIComponent(randomName)}&background=${Math.floor(Math.random() * 16777215).toString(16)}&color=fff`,
         },
       })
 
+      console.log(`🎭 New demo user created: ${randomName} (${email})`)
       return { success: true, user: demoUser }
     } catch (error: any) {
       console.error('Sign-in error:', error)

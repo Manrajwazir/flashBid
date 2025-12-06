@@ -1,115 +1,179 @@
-import { createFileRoute, useRouter } from '@tanstack/react-router'
-import { getAuctions, placeBid } from '../server/functions'
-import { useEffect, useState } from 'react'
+import { createFileRoute, useRouter, Link } from '@tanstack/react-router'
+import { getAuctions } from '../server/functions'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useSession } from '../lib/auth-client'
+import { CompactCountdown } from '../components/ui/CountdownTimer'
+import { AuctionCardSkeleton } from '../components/ui/Skeleton'
+import { Pagination, ItemsPerPageSelector } from '../components/ui/Pagination'
+import { BidModal } from '../components/BidModal'
+import { useToast } from '../components/ToastProvider'
+import { useRealTimeAuctions, useOutbidNotifications } from '../hooks/useWebSocket'
+import { ConnectionStatus } from '../components/ConnectionStatus'
+import { formatCurrency } from '../lib/utils'
+
+const ITEMS_PER_PAGE = 12
 
 export const Route = createFileRoute('/')({
   component: Home,
-  loader: async () => await getAuctions({ data: undefined } as any),
+  loader: async () => {
+    const result = await getAuctions({ data: { limit: 100 } } as any)
+    return result
+  },
+  pendingComponent: HomeLoading,
 })
 
+function HomeLoading() {
+  return (
+    <div className="p-8 max-w-7xl mx-auto font-sans">
+      <div className="flex justify-between items-center mb-10">
+        <div className="h-10 w-48 bg-[#231730] rounded-md animate-pulse" />
+        <div className="h-8 w-32 bg-[#231730] rounded-md animate-pulse" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <AuctionCardSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function Home() {
-  const auctions = Route.useLoaderData()
+  const loaderData = Route.useLoaderData()
   const router = useRouter()
   const { data: session } = useSession()
+  const toast = useToast()
 
+  // State
   const [searchQuery, setSearchQuery] = useState('')
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
   const [sortBy, setSortBy] = useState<'endingSoon' | 'priceLow' | 'priceHigh'>('endingSoon')
-  const [filteredAuctions, setFilteredAuctions] = useState(auctions)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(ITEMS_PER_PAGE)
 
-  // --- THE REAL-TIME MAGIC ---
-  // This refreshes the data every 2 seconds automatically
-  useEffect(() => {
-    const interval = setInterval(() => {
-      router.invalidate()
-    }, 2000)
-    return () => clearInterval(interval)
-  }, [router])
-  // ---------------------------
+  // Bid modal state
+  const [selectedAuction, setSelectedAuction] = useState<any>(null)
+  const [isBidModalOpen, setIsBidModalOpen] = useState(false)
 
-  // Apply filters locally
-  useEffect(() => {
-    let filtered = [...auctions]
+  // Get real-time updated auctions via WebSocket
+  const realTimeAuctions = useRealTimeAuctions(loaderData.auctions || [])
+
+  // Outbid notifications
+  useOutbidNotifications(session?.user?.id || null, (auctionId, newPrice) => {
+    const auction = realTimeAuctions.find(a => a.id === auctionId)
+    if (auction) {
+      toast.warning(`You've been outbid on "${auction.title}"! New price: ${formatCurrency(newPrice)}`)
+    }
+  })
+
+  // Filter and sort auctions
+  const filteredAuctions = useMemo(() => {
+    let filtered = [...realTimeAuctions]
 
     // Search filter
     if (searchQuery) {
-      filtered = filtered.filter(auction =>
-        auction.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        auction.description.toLowerCase().includes(searchQuery.toLowerCase())
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(
+        (auction) =>
+          auction.title.toLowerCase().includes(query) ||
+          auction.description.toLowerCase().includes(query)
       )
     }
 
     // Price filters
     if (minPrice) {
-      filtered = filtered.filter(auction => auction.currentPrice >= parseFloat(minPrice))
+      filtered = filtered.filter((auction) => auction.currentPrice >= parseFloat(minPrice))
     }
     if (maxPrice) {
-      filtered = filtered.filter(auction => auction.currentPrice <= parseFloat(maxPrice))
+      filtered = filtered.filter((auction) => auction.currentPrice <= parseFloat(maxPrice))
     }
 
-    // Sort
+    // Helper to check if auction is still active (not ended)
+    const isActiveAuction = (auction: any) => {
+      return new Date(auction.endsAt) > new Date()
+    }
+
+    // Sort: Active auctions first, then ended auctions
     if (sortBy === 'endingSoon') {
-      filtered.sort((a, b) => new Date(a.endsAt).getTime() - new Date(b.endsAt).getTime())
+      filtered.sort((a, b) => {
+        const aIsActive = isActiveAuction(a)
+        const bIsActive = isActiveAuction(b)
+        // Active auctions come first
+        if (aIsActive && !bIsActive) return -1
+        if (!aIsActive && bIsActive) return 1
+        // Both active: sort by ending soonest
+        if (aIsActive && bIsActive) {
+          return new Date(a.endsAt).getTime() - new Date(b.endsAt).getTime()
+        }
+        // Both ended: sort by most recently ended
+        return new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime()
+      })
     } else if (sortBy === 'priceLow') {
-      filtered.sort((a, b) => a.currentPrice - b.currentPrice)
+      filtered.sort((a, b) => {
+        const aIsActive = isActiveAuction(a)
+        const bIsActive = isActiveAuction(b)
+        if (aIsActive !== bIsActive) return aIsActive ? -1 : 1
+        if (aIsActive) return a.currentPrice - b.currentPrice
+        return new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime()
+      })
     } else if (sortBy === 'priceHigh') {
-      filtered.sort((a, b) => b.currentPrice - a.currentPrice)
+      filtered.sort((a, b) => {
+        const aIsActive = isActiveAuction(a)
+        const bIsActive = isActiveAuction(b)
+        if (aIsActive !== bIsActive) return aIsActive ? -1 : 1
+        if (aIsActive) return b.currentPrice - a.currentPrice
+        return new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime()
+      })
     }
 
-    setFilteredAuctions(filtered)
-  }, [auctions, searchQuery, minPrice, maxPrice, sortBy])
+    return filtered
+  }, [realTimeAuctions, searchQuery, minPrice, maxPrice, sortBy])
 
-  const handleBid = async (auctionId: string, currentPrice: number) => {
-    // Check if user is logged in
+  // Paginate
+  const totalPages = Math.ceil(filteredAuctions.length / itemsPerPage)
+  const paginatedAuctions = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    return filteredAuctions.slice(start, start + itemsPerPage)
+  }, [filteredAuctions, currentPage, itemsPerPage])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery, minPrice, maxPrice, sortBy, itemsPerPage])
+
+  const handleBidClick = useCallback((auction: any) => {
     if (!session?.user) {
-      const shouldLogin = confirm('You must be logged in to place a bid. Go to login page?')
-      if (shouldLogin) {
+      if (confirm('You must be logged in to place a bid. Go to login page?')) {
         window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
       }
       return
     }
+    setSelectedAuction(auction)
+    setIsBidModalOpen(true)
+  }, [session])
 
-    const amountStr = window.prompt(`Current price is $${currentPrice}. Enter your bid:`)
-    if (!amountStr) return
-
-    const amount = parseFloat(amountStr)
-    if (isNaN(amount) || amount <= currentPrice) {
-      alert("Invalid bid amount!")
-      return
-    }
-
-    const result = await placeBid({ data: { auctionId, amount, userId: session.user.id } } as any)
-
-    if (result.success) {
-      router.invalidate() // Instant update for the bidder
-      alert("Bid Placed! 🚀")
-    } else {
-      alert("Error: " + result.error)
-    }
+  const handleBidPlaced = (newPrice: number) => {
+    toast.success('Bid placed successfully!')
   }
 
   return (
     <div className="p-8 max-w-7xl mx-auto font-sans">
+      {/* Header */}
       <div className="flex justify-between items-center mb-10">
-        <h1 className="text-4xl font-black tracking-tight text-gray-900">
-          FlashBid <span className="text-blue-600">⚡️</span>
+        <h1 className="text-4xl font-black tracking-tight text-white">
+          FlashBid <span className="text-purple-400">⚡️</span>
         </h1>
-        <div className="flex gap-2 items-center">
-          {/* Pulsing Dot Animation */}
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-          </span>
-          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold border border-green-200">
-            LIVE UPDATES
+        <div className="flex gap-3 items-center">
+          <ConnectionStatus />
+          <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-md text-sm font-bold border border-purple-500/30">
+            🟢 LIVE
           </span>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="mb-8 bg-white rounded-2xl shadow-lg p-6 space-y-4">
+      <div className="mb-8 bg-[#1a1025] rounded-lg border border-[#3d2a54] p-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="md:col-span-2">
@@ -118,7 +182,7 @@ function Home() {
               placeholder="🔍 Search auctions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-md bg-[#0f0a1a] border border-[#3d2a54] text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
             />
           </div>
 
@@ -129,7 +193,7 @@ function Home() {
               placeholder="Min Price"
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-md bg-[#0f0a1a] border border-[#3d2a54] text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
               step="1"
               min="0"
             />
@@ -142,102 +206,152 @@ function Home() {
               placeholder="Max Price"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-md bg-[#0f0a1a] border border-[#3d2a54] text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
               step="1"
               min="0"
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4">
-          <span className="text-sm font-bold text-gray-700">Sort by:</span>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => setSortBy('endingSoon')}
-              className={`px-4 py-2 rounded-xl font-semibold transition-all ${sortBy === 'endingSoon'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              Ending Soon
-            </button>
-            <button
-              onClick={() => setSortBy('priceLow')}
-              className={`px-4 py-2 rounded-xl font-semibold transition-all ${sortBy === 'priceLow'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              Price: Low to High
-            </button>
-            <button
-              onClick={() => setSortBy('priceHigh')}
-              className={`px-4 py-2 rounded-xl font-semibold transition-all ${sortBy === 'priceHigh'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              Price: High to Low
-            </button>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="text-sm font-bold text-gray-400">Sort by:</span>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { value: 'endingSoon', label: 'Ending Soon' },
+                { value: 'priceLow', label: 'Price: Low to High' },
+                { value: 'priceHigh', label: 'Price: High to Low' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setSortBy(option.value as typeof sortBy)}
+                  className={`px-4 py-2 rounded-md font-semibold transition-all ${sortBy === option.value
+                    ? 'bg-gradient-to-r from-purple-500 to-violet-600 text-white'
+                    : 'bg-[#2d1f40] text-gray-300 hover:bg-[#3d2a54]'
+                    }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          <ItemsPerPageSelector
+            value={itemsPerPage}
+            onChange={setItemsPerPage}
+            options={[12, 24, 48]}
+          />
         </div>
 
         {/* Results count */}
-        <p className="text-sm text-gray-600">
-          Showing <span className="font-bold">{filteredAuctions.length}</span> of <span className="font-bold">{auctions.length}</span> auctions
+        <p className="text-sm text-gray-400">
+          Showing <span className="font-bold text-white">{paginatedAuctions.length}</span> of{' '}
+          <span className="font-bold text-white">{filteredAuctions.length}</span> auctions
         </p>
       </div>
 
       {/* Auctions Grid */}
-      {filteredAuctions.length === 0 ? (
+      {paginatedAuctions.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">No auctions found</h3>
-          <p className="text-gray-600">Try adjusting your search or filters</p>
+          <h3 className="text-2xl font-bold text-white mb-2">No auctions found</h3>
+          <p className="text-gray-400">Try adjusting your search or filters</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredAuctions.map((auction) => (
-            <div key={auction.id} className="group bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden">
-
-              <div className="h-56 bg-gray-100 relative overflow-hidden">
-                {auction.imageUrl ? (
-                  <img
-                    src={auction.imageUrl}
-                    alt={auction.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
-                )}
-                <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold tracking-wide">
-                  ENDS IN 24H
-                </div>
-              </div>
-
-              <div className="p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1">{auction.title}</h2>
-                <p className="text-gray-500 text-sm mb-6 line-clamp-2 leading-relaxed">{auction.description}</p>
-
-                <div className="flex justify-between items-end border-t border-gray-100 pt-4">
-                  <div>
-                    <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">Current Price</p>
-                    {/* We added a key here so React animates the number change */}
-                    <p key={auction.currentPrice} className="text-2xl font-mono font-black text-green-600 animate-pulse">
-                      ${auction.currentPrice.toFixed(2)}
-                    </p>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {paginatedAuctions.map((auction) => (
+              <div
+                key={auction.id}
+                className="group bg-[#1a1025] rounded-lg border border-[#3d2a54] hover:border-purple-500 transition-all duration-300 overflow-hidden hover:shadow-lg hover:shadow-purple-500/10"
+              >
+                {/* Image - Click to go to detail */}
+                <Link to="/auction/$auctionId" params={{ auctionId: auction.id }}>
+                  <div className="h-56 bg-[#0f0a1a] relative overflow-hidden cursor-pointer">
+                    {auction.imageUrl ? (
+                      <img
+                        src={auction.imageUrl}
+                        alt={auction.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-500">
+                        <div className="text-center">
+                          <div className="text-4xl mb-2">📦</div>
+                          <p className="text-sm">No Image</p>
+                        </div>
+                      </div>
+                    )}
+                    {/* Countdown badge */}
+                    <div className="absolute top-3 right-3">
+                      <CompactCountdown endsAt={auction.endsAt} />
+                    </div>
+                    {/* Bid count */}
+                    {auction._count?.bids > 0 && (
+                      <div className="absolute bottom-3 left-3 bg-[#1a1025]/90 backdrop-blur-md px-2 py-1 rounded-md text-xs font-bold text-purple-400 border border-purple-500/30">
+                        🔥 {auction._count.bids} bid{auction._count.bids !== 1 ? 's' : ''}
+                      </div>
+                    )}
                   </div>
-                  <button
-                    onClick={() => handleBid(auction.id, auction.currentPrice)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-colors shadow-lg shadow-blue-200 cursor-pointer active:scale-95"
-                  >
-                    Bid Now
-                  </button>
+                </Link>
+
+                <div className="p-6">
+                  <Link to="/auction/$auctionId" params={{ auctionId: auction.id }}>
+                    <h2 className="text-xl font-bold text-white mb-2 line-clamp-1 hover:text-purple-400 transition-colors cursor-pointer">
+                      {auction.title}
+                    </h2>
+                  </Link>
+                  <p className="text-gray-400 text-sm mb-6 line-clamp-2 leading-relaxed">
+                    {auction.description}
+                  </p>
+
+                  <div className="flex justify-between items-end border-t border-[#3d2a54] pt-4">
+                    <div>
+                      <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">
+                        Current Price
+                      </p>
+                      <p className="text-2xl font-mono font-black text-purple-400">
+                        {formatCurrency(auction.currentPrice)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleBidClick(auction)}
+                      className="bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-400 hover:to-violet-500 text-white px-6 py-2.5 rounded-md font-bold transition-all cursor-pointer active:scale-95"
+                    >
+                      Bid Now
+                    </button>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-8">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </div>
-          ))}
-        </div>
+          )}
+        </>
+      )}
+
+      {/* Bid Modal */}
+      {session?.user && selectedAuction && (
+        <BidModal
+          isOpen={isBidModalOpen}
+          onClose={() => {
+            setIsBidModalOpen(false)
+            setSelectedAuction(null)
+          }}
+          auction={selectedAuction}
+          userId={session.user.id}
+          onBidPlaced={handleBidPlaced}
+        />
       )}
     </div>
   )

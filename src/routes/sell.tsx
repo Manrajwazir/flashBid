@@ -33,8 +33,8 @@ function SellPage() {
 
     if (isPending) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="min-h-screen flex items-center justify-center bg-[#0f0a1a]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
             </div>
         )
     }
@@ -93,7 +93,7 @@ function SellPage() {
 
     if (showSuccess && createdAuction) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12 px-4">
+            <div className="min-h-screen bg-gradient-to-br from-[#0f0a1a] via-[#1a1025] to-[#0f0a1a] py-12 px-4">
                 <div className="max-w-2xl mx-auto text-center">
                     <div className="mb-6">
                         <div className="inline-flex items-center justify-center w-20 h-20 bg-green-500 rounded-full mb-4">
@@ -101,22 +101,22 @@ function SellPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                             </svg>
                         </div>
-                        <h1 className="text-3xl font-black text-gray-900 mb-2">Auction Created! 🎉</h1>
-                        <p className="text-gray-600">Your auction is now live and ready for bids</p>
+                        <h1 className="text-3xl font-black text-white mb-2">Auction Created! 🎉</h1>
+                        <p className="text-gray-400">Your auction is now live and ready for bids</p>
                     </div>
 
                     {createdAuction.imageUrl && (
                         <img
                             src={createdAuction.imageUrl}
                             alt={createdAuction.title}
-                            className="w-full max-w-md mx-auto rounded-2xl shadow-lg mb-6"
+                            className="w-full max-w-md mx-auto rounded-2xl shadow-lg mb-6 border border-[#3d2a54]"
                         />
                     )}
 
-                    <div className="bg-white rounded-2xl p-6 shadow-lg mb-6">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">{createdAuction.title}</h2>
-                        <p className="text-gray-600 mb-4">{createdAuction.description}</p>
-                        <p className="text-xl font-mono font-black text-green-600">
+                    <div className="bg-[#1a1025] rounded-2xl p-6 shadow-lg mb-6 border border-[#3d2a54]">
+                        <h2 className="text-2xl font-bold text-white mb-2">{createdAuction.title}</h2>
+                        <p className="text-gray-400 mb-4">{createdAuction.description}</p>
+                        <p className="text-xl font-mono font-black text-purple-400">
                             Starting at ${createdAuction.startPrice.toFixed(2)}
                         </p>
                     </div>
@@ -138,20 +138,20 @@ function SellPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4">
+        <div className="min-h-screen bg-gradient-to-br from-[#0f0a1a] via-[#1a1025] to-[#0f0a1a] py-12 px-4">
             <div className="max-w-2xl mx-auto">
                 <div className="mb-8">
-                    <h1 className="text-4xl font-black text-gray-900 mb-2">Create an Auction</h1>
-                    <p className="text-gray-600">List your item and start receiving bids</p>
+                    <h1 className="text-4xl font-black text-white mb-2">Create an Auction</h1>
+                    <p className="text-gray-400">List your item and start receiving bids</p>
                 </div>
 
                 {errors.general && (
-                    <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
-                        <p className="text-red-700 font-semibold">{errors.general}</p>
+                    <div className="mb-6 p-4 bg-red-500/20 border-2 border-red-500/30 rounded-xl">
+                        <p className="text-red-400 font-semibold">{errors.general}</p>
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg p-8 space-y-6">
+                <form onSubmit={handleSubmit} className="bg-[#1a1025] rounded-2xl shadow-lg p-8 space-y-6 border border-[#3d2a54]">
                     <Input
                         label="Title *"
                         placeholder="e.g., Vintage Guitar"
@@ -162,7 +162,7 @@ function SellPage() {
                     />
 
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                        <label className="block text-sm font-bold text-gray-300 mb-2">
                             Description *
                         </label>
                         <textarea
@@ -170,13 +170,13 @@ function SellPage() {
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             rows={4}
-                            className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${errors.description
-                                ? 'border-red-500 bg-red-50'
-                                : 'border-gray-200 bg-white hover:border-gray-300'
+                            className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none ${errors.description
+                                ? 'border-red-500 bg-red-500/10'
+                                : 'border-[#3d2a54] bg-[#0f0a1a] hover:border-purple-500/50 text-white placeholder-gray-500'
                                 }`}
                         />
                         {errors.description && (
-                            <p className="mt-2 text-sm text-red-600 font-medium">{errors.description}</p>
+                            <p className="mt-2 text-sm text-red-400 font-medium">{errors.description}</p>
                         )}
                         <p className="mt-2 text-sm text-gray-500">10-500 characters</p>
                     </div>
@@ -192,11 +192,11 @@ function SellPage() {
 
                     {formData.imageUrl && (
                         <div className="mt-4">
-                            <p className="text-sm font-bold text-gray-700 mb-2">Image Preview:</p>
+                            <p className="text-sm font-bold text-gray-300 mb-2">Image Preview:</p>
                             <img
                                 src={formData.imageUrl}
                                 alt="Preview"
-                                className="w-full max-w-sm rounded-xl shadow-md"
+                                className="w-full max-w-sm rounded-xl shadow-md border border-[#3d2a54]"
                                 onError={(e) => {
                                     e.currentTarget.style.display = 'none'
                                 }}
@@ -225,7 +225,7 @@ function SellPage() {
                         helperText="When the auction should end"
                     />
 
-                    <div className="pt-4 border-t border-gray-200">
+                    <div className="pt-4 border-t border-[#3d2a54]">
                         <Button
                             type="submit"
                             className="w-full"
