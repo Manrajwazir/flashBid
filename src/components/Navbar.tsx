@@ -26,10 +26,16 @@ export function Navbar() {
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex items-center gap-4">
                         <Link
+                            to="/welcome"
+                            className="text-[#8b949e] hover:text-[#e6edf3] text-sm font-medium transition-colors"
+                        >
+                            About
+                        </Link>
+                        <Link
                             to="/"
                             className="text-[#8b949e] hover:text-[#e6edf3] text-sm font-medium transition-colors"
                         >
-                            Browse
+                            Auctions
                         </Link>
 
                         {session?.user ? (
