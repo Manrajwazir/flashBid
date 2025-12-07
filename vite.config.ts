@@ -24,6 +24,12 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+  optimizeDeps: {
+    exclude: ['@prisma/client', '.prisma/client'],
+  },
+  ssr: {
+    external: ['@prisma/client', '.prisma/client'],
+  },
 })
 
 export default config

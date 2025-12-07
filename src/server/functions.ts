@@ -110,7 +110,7 @@ export const getAuctions = createServerFn({ method: 'GET' })
     }
 
     // Sort: Active auctions first (by endsAt ascending), then ended auctions (by endsAt descending)
-    const sortedAuctions = allAuctions.sort((a, b) => {
+    const sortedAuctions = allAuctions.sort((a: any, b: any) => {
       const aIsActive = isActiveAuction(a)
       const bIsActive = isActiveAuction(b)
 
@@ -129,7 +129,7 @@ export const getAuctions = createServerFn({ method: 'GET' })
 
     // Apply custom sort if specified (only affects active auctions order within their group)
     if (params?.sortBy === 'priceLow') {
-      sortedAuctions.sort((a, b) => {
+      sortedAuctions.sort((a: any, b: any) => {
         const aIsActive = isActiveAuction(a)
         const bIsActive = isActiveAuction(b)
         if (aIsActive !== bIsActive) return aIsActive ? -1 : 1
@@ -137,7 +137,7 @@ export const getAuctions = createServerFn({ method: 'GET' })
         return new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime()
       })
     } else if (params?.sortBy === 'priceHigh') {
-      sortedAuctions.sort((a, b) => {
+      sortedAuctions.sort((a: any, b: any) => {
         const aIsActive = isActiveAuction(a)
         const bIsActive = isActiveAuction(b)
         if (aIsActive !== bIsActive) return aIsActive ? -1 : 1
@@ -228,7 +228,7 @@ export const placeBid = createServerFn({ method: 'POST' })
     }
 
     try {
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
         const auction = await tx.auction.findUnique({
           where: { id: data.auctionId }
         })
@@ -368,7 +368,7 @@ export const getUserBids = createServerFn({ method: 'GET' })
     })
 
     // Add winning/losing status
-    const bidsWithStatus = bids.map(bid => ({
+    const bidsWithStatus = bids.map((bid: typeof bids[number]) => ({
       ...bid,
       isWinning: bid.amount === bid.auction.currentPrice,
     }))
