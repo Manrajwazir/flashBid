@@ -56,7 +56,7 @@ function AuctionsPage() {
   const [isBidModalOpen, setIsBidModalOpen] = useState(false)
 
   // Get real-time updated auctions via WebSocket
-  const realTimeAuctions = useRealTimeAuctions(loaderData.auctions || [])
+  const realTimeAuctions = useRealTimeAuctions<any>(loaderData.auctions || [])
 
   // Outbid notifications
   useOutbidNotifications(session?.user?.id || null, (auctionId, newPrice) => {
