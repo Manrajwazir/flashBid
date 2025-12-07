@@ -1,8 +1,9 @@
 import { WebSocketServer, WebSocket } from 'ws'
 import { createServer } from 'http'
 
-const WS_PORT = 3001
-const HTTP_PORT = 3002
+// Use PORT env var for Render, fallback to 3001 for local dev
+const WS_PORT = parseInt(process.env.PORT || '3001', 10)
+const HTTP_PORT = WS_PORT + 1 // HTTP broadcast on next port
 
 // Store connected clients
 const clients = new Map<WebSocket, { userId?: string; subscriptions: Set<string> }>()

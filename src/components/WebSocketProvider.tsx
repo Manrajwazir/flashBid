@@ -40,9 +40,8 @@ const getWsUrl = () => {
 
     const isProduction = window.location.hostname !== 'localhost'
     if (isProduction) {
-        // In production on Render, WebSocket runs on same host
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        return `${protocol}//${window.location.hostname}:3001`
+        // In production, WebSocket runs on a separate Render service
+        return 'wss://flashbid-ws.onrender.com'
     }
     return 'ws://localhost:3001'
 }
