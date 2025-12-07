@@ -139,16 +139,16 @@ function AuctionDetailPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left Column - Image */}
                     <div>
-                        <div className="relative rounded-md overflow-hidden bg-[#161b22] aspect-square border border-[#30363d]">
+                        <div className="relative rounded-md overflow-hidden bg-[#161b22] border border-[#30363d] flex items-center justify-center p-2">
                             {auction.imageUrl ? (
                                 <img
                                     src={auction.imageUrl}
                                     alt={auction.title}
-                                    className="w-full h-full object-cover"
+                                    className="max-w-full max-h-[500px] object-contain"
                                     loading="lazy"
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[#6e7681]">
+                                <div className="w-full h-[400px] flex items-center justify-center text-[#6e7681]">
                                     <div className="text-center">
                                         <div className="text-5xl mb-2">📦</div>
                                         <p className="text-sm">No image</p>
@@ -178,10 +178,10 @@ function AuctionDetailPage() {
                         {/* Winner Banner - Shows when auction is ended */}
                         {isAuctionEnded && bidHistory.length > 0 && (
                             <div className={`rounded-md p-4 border ${session?.user?.id === bidHistory[0]?.bidder?.id
-                                    ? 'bg-[#238636]/20 border-[#238636]'
-                                    : session?.user?.id === auction.seller.id
-                                        ? 'bg-[#58a6ff]/20 border-[#58a6ff]'
-                                        : 'bg-[#161b22] border-[#30363d]'
+                                ? 'bg-[#238636]/20 border-[#238636]'
+                                : session?.user?.id === auction.seller.id
+                                    ? 'bg-[#58a6ff]/20 border-[#58a6ff]'
+                                    : 'bg-[#161b22] border-[#30363d]'
                                 }`}>
                                 {session?.user?.id === bidHistory[0]?.bidder?.id ? (
                                     <>

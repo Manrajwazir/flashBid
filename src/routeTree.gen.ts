@@ -13,6 +13,7 @@ import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as SellRouteImport } from './routes/sell'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AuctionsRouteImport } from './routes/auctions'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuctionAuctionIdRouteImport } from './routes/auction.$auctionId'
@@ -37,6 +38,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuctionsRoute = AuctionsRouteImport.update({
+  id: '/auctions',
+  path: '/auctions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
   path: '/$',
@@ -56,6 +62,7 @@ const AuctionAuctionIdRoute = AuctionAuctionIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/auctions': typeof AuctionsRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/sell': typeof SellRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/auctions': typeof AuctionsRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/sell': typeof SellRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/auctions': typeof AuctionsRoute
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/sell': typeof SellRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/auctions'
     | '/dashboard'
     | '/login'
     | '/sell'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
+    | '/auctions'
     | '/dashboard'
     | '/login'
     | '/sell'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
+    | '/auctions'
     | '/dashboard'
     | '/login'
     | '/sell'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  AuctionsRoute: typeof AuctionsRoute
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   SellRoute: typeof SellRoute
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auctions': {
+      id: '/auctions'
+      path: '/auctions'
+      fullPath: '/auctions'
+      preLoaderRoute: typeof AuctionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$': {
       id: '/$'
       path: '/$'
@@ -178,6 +198,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  AuctionsRoute: AuctionsRoute,
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   SellRoute: SellRoute,
