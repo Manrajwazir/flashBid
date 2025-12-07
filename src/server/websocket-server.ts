@@ -3,13 +3,12 @@ import { createServer } from 'http'
 
 // Use PORT env var for Render, fallback to 3001 for local dev
 const WS_PORT = parseInt(process.env.PORT || '3001', 10)
-const HTTP_PORT = WS_PORT + 1 // HTTP broadcast on next port
 
 // Store connected clients
 const clients = new Map<WebSocket, { userId?: string; subscriptions: Set<string> }>()
 
-// Create HTTP server for receiving broadcast requests from the main app
-const httpServer = createServer((req, res) => {
+// Create HTTP server for both WebSocket upgrades and broadcast requests
+const server = createServer((req, res) => {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -45,20 +44,23 @@ const httpServer = createServer((req, res) => {
                 res.end(JSON.stringify({ success: false, error: 'Invalid JSON' }))
             }
         })
+    } else if (req.url === '/health') {
+        res.writeHead(200)
+        res.end('OK')
     } else {
+        // Let WebSocket handling happen (handled by 'upgrade' event automatically if allowed, but for HTTP requests we 404)
+        // Actually, for normal HTTP requests not handled above:
         res.writeHead(404)
         res.end('Not found')
     }
 })
 
-httpServer.listen(HTTP_PORT, () => {
-    console.log(`📡 HTTP broadcast server running on http://localhost:${HTTP_PORT}`)
+// Create WebSocket server attached to the HTTP server
+const wss = new WebSocketServer({ server })
+
+server.listen(WS_PORT, () => {
+    console.log(`🚀 WebSocket & HTTP Broadcast Server running on port ${WS_PORT}`)
 })
-
-// Create WebSocket server
-const wss = new WebSocketServer({ port: WS_PORT })
-
-console.log(`🔌 WebSocket server running on ws://localhost:${WS_PORT}`)
 
 wss.on('connection', (ws) => {
     console.log('📥 Client connected')

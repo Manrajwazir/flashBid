@@ -23,8 +23,15 @@ function getMinBidIncrement(currentPrice: number): number {
 
 // Broadcast bid update to WebSocket server
 async function broadcastBid(auctionId: string, newPrice: number, bidderId: string, bidderName?: string) {
+  const isProduction = process.env.NODE_ENV === 'production'
+  // Use the public Render URL for the WebSocket service in production
+  // Locally, use the same port as the WebSocket server (3001)
+  const WS_BROADCAST_URL = isProduction
+    ? 'https://flashbid-ws.onrender.com/broadcast'
+    : 'http://localhost:3001/broadcast'
+
   try {
-    await fetch('http://localhost:3002/broadcast', {
+    await fetch(WS_BROADCAST_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
