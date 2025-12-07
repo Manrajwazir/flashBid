@@ -18,7 +18,7 @@ export const Route = createRootRoute({
       { property: 'og:title', content: 'FlashBid ⚡️ - Real-Time Auctions' },
       { property: 'og:description', content: 'Buy and sell in lightning-fast bidding wars.' },
       { property: 'og:type', content: 'website' },
-      { name: 'theme-color', content: '#7c3aed' },
+      { name: 'theme-color', content: '#0d1117' },
     ],
     links: [
       { rel: 'icon', href: '/favicon.ico' },
@@ -51,7 +51,7 @@ function RootDocument({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className="font-sans antialiased bg-[#0f0a1a] text-white">
+      <body className="font-sans antialiased bg-[#0d1117] text-[#e6edf3]">
         <div className="min-h-screen">
           {children}
         </div>

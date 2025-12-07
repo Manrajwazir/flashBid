@@ -10,6 +10,8 @@ import { AuctionDetailSkeleton } from '../components/ui/Skeleton'
 import { useToast } from '../components/ToastProvider'
 import { useBidUpdates } from '../hooks/useWebSocket'
 import { formatCurrency } from '../lib/utils'
+import { AIBidAdvisor } from '../components/AIBidAdvisor'
+import { AIAuctioneer } from '../components/AIAuctioneer'
 
 export const Route = createFileRoute('/auction/$auctionId')({
     component: AuctionDetailPage,
@@ -98,31 +100,46 @@ function AuctionDetailPage() {
     }
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen bg-[#0d1117]">
             {/* Breadcrumbs */}
-            <div className="bg-[#1a1025] border-b border-[#3d2a54]">
+            <div className="bg-[#161b22] border-b border-[#30363d]">
                 <div className="max-w-6xl mx-auto px-4 py-3">
                     <nav className="flex items-center gap-2 text-sm">
-                        <Link to="/" className="text-gray-400 hover:text-purple-400 transition-colors">
+                        <Link to="/" className="text-[#8b949e] hover:text-[#58a6ff] transition-colors">
                             Home
                         </Link>
-                        <span className="text-gray-600">/</span>
-                        <Link to="/" className="text-gray-400 hover:text-purple-400 transition-colors">
+                        <span className="text-[#6e7681]">/</span>
+                        <Link to="/" className="text-[#8b949e] hover:text-[#58a6ff] transition-colors">
                             Auctions
                         </Link>
-                        <span className="text-gray-600">/</span>
-                        <span className="text-white font-medium truncate max-w-xs">
+                        <span className="text-[#6e7681]">/</span>
+                        <span className="text-[#e6edf3] font-medium truncate max-w-xs">
                             {auction.title}
                         </span>
                     </nav>
                 </div>
             </div>
 
-            <div className="max-w-6xl mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="max-w-6xl mx-auto px-4 py-6">
+                {/* AI Auctioneer - Top of page */}
+                {!isAuctionEnded && (
+                    <div className="mb-6">
+                        <AIAuctioneer
+                            auctionTitle={auction.title}
+                            currentPrice={currentPrice}
+                            startPrice={auction.startPrice}
+                            bidCount={bidHistory.length}
+                            timeRemainingMs={new Date(auction.endsAt).getTime() - Date.now()}
+                            lastBidderName={bidHistory[0]?.bidder?.name || undefined}
+                            isEnded={isAuctionEnded}
+                        />
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Left Column - Image */}
                     <div>
-                        <div className="relative rounded-lg overflow-hidden bg-[#1a1025] aspect-square border border-[#3d2a54]">
+                        <div className="relative rounded-md overflow-hidden bg-[#161b22] aspect-square border border-[#30363d]">
                             {auction.imageUrl ? (
                                 <img
                                     src={auction.imageUrl}
@@ -131,15 +148,15 @@ function AuctionDetailPage() {
                                     loading="lazy"
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                                <div className="w-full h-full flex items-center justify-center text-[#6e7681]">
                                     <div className="text-center">
-                                        <div className="text-6xl mb-2">📦</div>
-                                        <p>No image available</p>
+                                        <div className="text-5xl mb-2">📦</div>
+                                        <p className="text-sm">No image</p>
                                     </div>
                                 </div>
                             )}
 
-                            <div className="absolute top-4 left-4">
+                            <div className="absolute top-3 left-3">
                                 <Badge variant={isAuctionEnded ? 'neutral' : 'success'}>
                                     {isAuctionEnded ? '🔒 ENDED' : '🟢 LIVE'}
                                 </Badge>
@@ -159,8 +176,8 @@ function AuctionDetailPage() {
                         </div>
 
                         {/* Timer */}
-                        <div className="bg-[#1a1025] rounded-lg p-4 border border-[#3d2a54]">
-                            <p className="text-sm font-semibold text-gray-400 mb-2">Time Remaining</p>
+                        <div className="bg-[#161b22] rounded-md p-4 border border-[#30363d]">
+                            <p className="text-xs text-[#8b949e] mb-2">Time Remaining</p>
                             <CountdownTimer
                                 endsAt={auction.endsAt}
                                 onExpire={handleAuctionExpire}
@@ -169,11 +186,11 @@ function AuctionDetailPage() {
                         </div>
 
                         {/* Price section */}
-                        <div className="bg-[#1a1025] rounded-lg p-6 border border-[#3d2a54]">
-                            <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="bg-[#161b22] rounded-md p-4 border border-[#30363d]">
+                            <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <p className="text-sm font-semibold text-gray-400 mb-1">Current Price</p>
-                                    <p className="text-3xl font-mono font-black text-purple-400">
+                                    <p className="text-xs text-[#8b949e] mb-1">Current Price</p>
+                                    <p className="text-2xl font-mono font-semibold text-[#3fb950]">
                                         {formatCurrency(currentPrice)}
                                     </p>
                                 </div>
@@ -185,10 +202,10 @@ function AuctionDetailPage() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-4 mb-6">
-                                <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 rounded-md border border-purple-500/30">
-                                    <span className="text-purple-400">👥</span>
-                                    <span className="text-sm font-bold text-purple-400">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-[#58a6ff]/10 rounded-md">
+                                    <span className="text-[#58a6ff]">👥</span>
+                                    <span className="text-sm font-medium text-[#58a6ff]">
                                         {auction._count.bids} bid{auction._count.bids !== 1 ? 's' : ''}
                                     </span>
                                 </div>
@@ -208,49 +225,60 @@ function AuctionDetailPage() {
                         </div>
 
                         {/* Seller info */}
-                        <div className="bg-[#1a1025] rounded-lg p-4 border border-[#3d2a54]">
-                            <p className="text-sm font-semibold text-gray-400 mb-3">Seller</p>
+                        <div className="bg-[#161b22] rounded-md p-4 border border-[#30363d]">
+                            <p className="text-xs text-[#8b949e] mb-2">Seller</p>
                             <div className="flex items-center gap-3">
                                 <img
-                                    src={auction.seller.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(auction.seller.name || 'User')}&background=7c3aed&color=fff`}
+                                    src={auction.seller.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(auction.seller.name || 'User')}&background=30363d&color=e6edf3`}
                                     alt={auction.seller.name || 'Seller'}
-                                    className="w-12 h-12 rounded-md ring-2 ring-purple-500"
+                                    className="w-10 h-10 rounded-full"
                                 />
                                 <div>
-                                    <p className="font-bold text-white">{auction.seller.name || 'Anonymous'}</p>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="font-medium text-[#e6edf3]">{auction.seller.name || 'Anonymous'}</p>
+                                    <p className="text-xs text-[#6e7681]">
                                         Member since {new Date(auction.seller.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                                     </p>
                                 </div>
                             </div>
                         </div>
+
+                        {/* AI Bid Advisor */}
+                        <AIBidAdvisor
+                            title={auction.title}
+                            description={auction.description}
+                            currentPrice={currentPrice}
+                            startPrice={auction.startPrice}
+                            bidCount={auction._count.bids}
+                            endsAt={auction.endsAt}
+                            isEnded={isAuctionEnded}
+                        />
                     </div>
                 </div>
 
                 {/* Bid History */}
-                <div className="mt-12">
-                    <h2 className="text-2xl font-bold text-white mb-6">Bid History</h2>
+                <div className="mt-8">
+                    <h2 className="text-lg font-semibold text-[#e6edf3] mb-4">Bid History</h2>
 
                     {bidHistory.length === 0 ? (
-                        <div className="bg-[#1a1025] rounded-lg p-8 border border-[#3d2a54] text-center">
-                            <div className="text-4xl mb-3">🏷️</div>
-                            <p className="text-gray-400">No bids yet. Be the first to bid!</p>
+                        <div className="bg-[#161b22] rounded-md p-6 border border-[#30363d] text-center">
+                            <div className="text-3xl mb-2">🏷️</div>
+                            <p className="text-[#8b949e] text-sm">No bids yet. Be the first to bid!</p>
                         </div>
                     ) : (
-                        <div className="bg-[#1a1025] rounded-lg border border-[#3d2a54] overflow-hidden">
+                        <div className="bg-[#161b22] rounded-md border border-[#30363d] overflow-hidden">
                             <table className="w-full">
                                 <thead>
-                                    <tr className="bg-[#0f0a1a] border-b border-[#3d2a54]">
-                                        <th className="text-left py-3 px-4 font-bold text-gray-400">Bidder</th>
-                                        <th className="text-right py-3 px-4 font-bold text-gray-400">Amount</th>
-                                        <th className="text-right py-3 px-4 font-bold text-gray-400">Time</th>
+                                    <tr className="bg-[#0d1117] border-b border-[#30363d]">
+                                        <th className="text-left py-2 px-4 text-xs font-medium text-[#8b949e]">Bidder</th>
+                                        <th className="text-right py-2 px-4 text-xs font-medium text-[#8b949e]">Amount</th>
+                                        <th className="text-right py-2 px-4 text-xs font-medium text-[#8b949e]">Time</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {bidHistory.map((bid: any, index: number) => (
                                         <tr
                                             key={bid.id}
-                                            className={`border-b border-[#3d2a54] ${index === 0 ? 'bg-purple-500/10' : ''}`}
+                                            className={`border-b border-[#30363d] ${index === 0 ? 'bg-[#238636]/10' : ''}`}
                                         >
                                             <td className="py-3 px-4">
                                                 <div className="flex items-center gap-3">
@@ -268,7 +296,7 @@ function AuctionDetailPage() {
                                                 </div>
                                             </td>
                                             <td className="py-3 px-4 text-right">
-                                                <span className="font-mono font-bold text-purple-400">
+                                                <span className="font-mono font-semibold text-[#3fb950]">
                                                     {formatCurrency(bid.amount)}
                                                 </span>
                                             </td>

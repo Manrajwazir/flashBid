@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter, Link } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { getAuctions } from '../server/functions'
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useSession } from '../lib/auth-client'
@@ -24,12 +24,12 @@ export const Route = createFileRoute('/')({
 
 function HomeLoading() {
   return (
-    <div className="p-8 max-w-7xl mx-auto font-sans">
-      <div className="flex justify-between items-center mb-10">
-        <div className="h-10 w-48 bg-[#231730] rounded-md animate-pulse" />
-        <div className="h-8 w-32 bg-[#231730] rounded-md animate-pulse" />
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <div className="h-8 w-40 bg-[#21262d] rounded-md animate-pulse" />
+        <div className="h-6 w-24 bg-[#21262d] rounded-md animate-pulse" />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[1, 2, 3, 4, 5, 6].map((i) => (
           <AuctionCardSkeleton key={i} />
         ))}
@@ -40,7 +40,6 @@ function HomeLoading() {
 
 function Home() {
   const loaderData = Route.useLoaderData()
-  const router = useRouter()
   const { data: session } = useSession()
   const toast = useToast()
 
@@ -153,28 +152,28 @@ function Home() {
     setIsBidModalOpen(true)
   }, [session])
 
-  const handleBidPlaced = (newPrice: number) => {
+  const handleBidPlaced = (_newPrice: number) => {
     toast.success('Bid placed successfully!')
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto font-sans">
+    <div className="p-6 max-w-7xl mx-auto bg-[#0d1117] min-h-screen">
       {/* Header */}
-      <div className="flex justify-between items-center mb-10">
-        <h1 className="text-4xl font-black tracking-tight text-white">
-          FlashBid <span className="text-purple-400">⚡️</span>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-xl font-semibold text-[#e6edf3]">
+          Live Auctions
         </h1>
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-2 items-center">
           <ConnectionStatus />
-          <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-md text-sm font-bold border border-purple-500/30">
+          <span className="px-2 py-1 bg-[#238636]/20 text-[#3fb950] rounded-md text-xs font-medium">
             🟢 LIVE
           </span>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="mb-8 bg-[#1a1025] rounded-lg border border-[#3d2a54] p-6 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="mb-6 bg-[#161b22] rounded-md border border-[#30363d] p-4 space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           {/* Search */}
           <div className="md:col-span-2">
             <input
@@ -182,7 +181,7 @@ function Home() {
               placeholder="🔍 Search auctions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 rounded-md bg-[#0f0a1a] border border-[#3d2a54] text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+              className="w-full px-3 py-2 rounded-md bg-[#0d1117] border border-[#30363d] text-[#e6edf3] placeholder-[#6e7681] focus:border-[#58a6ff] focus:outline-none text-sm"
             />
           </div>
 
@@ -193,7 +192,7 @@ function Home() {
               placeholder="Min Price"
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
-              className="w-full px-4 py-3 rounded-md bg-[#0f0a1a] border border-[#3d2a54] text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+              className="w-full px-3 py-2 rounded-md bg-[#0d1117] border border-[#30363d] text-[#e6edf3] placeholder-[#6e7681] focus:border-[#58a6ff] focus:outline-none text-sm"
               step="1"
               min="0"
             />
@@ -206,28 +205,28 @@ function Home() {
               placeholder="Max Price"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
-              className="w-full px-4 py-3 rounded-md bg-[#0f0a1a] border border-[#3d2a54] text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+              className="w-full px-3 py-2 rounded-md bg-[#0d1117] border border-[#30363d] text-[#e6edf3] placeholder-[#6e7681] focus:border-[#58a6ff] focus:outline-none text-sm"
               step="1"
               min="0"
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <span className="text-sm font-bold text-gray-400">Sort by:</span>
-            <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs text-[#8b949e]">Sort by:</span>
+            <div className="flex gap-1 flex-wrap">
               {[
                 { value: 'endingSoon', label: 'Ending Soon' },
-                { value: 'priceLow', label: 'Price: Low to High' },
-                { value: 'priceHigh', label: 'Price: High to Low' },
+                { value: 'priceLow', label: 'Price: Low' },
+                { value: 'priceHigh', label: 'Price: High' },
               ].map((option) => (
                 <button
                   key={option.value}
                   onClick={() => setSortBy(option.value as typeof sortBy)}
-                  className={`px-4 py-2 rounded-md font-semibold transition-all ${sortBy === option.value
-                    ? 'bg-gradient-to-r from-purple-500 to-violet-600 text-white'
-                    : 'bg-[#2d1f40] text-gray-300 hover:bg-[#3d2a54]'
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${sortBy === option.value
+                    ? 'bg-[#1f6feb] text-white'
+                    : 'bg-[#21262d] text-[#8b949e] hover:bg-[#30363d] hover:text-[#e6edf3]'
                     }`}
                 >
                   {option.label}
@@ -244,9 +243,9 @@ function Home() {
         </div>
 
         {/* Results count */}
-        <p className="text-sm text-gray-400">
-          Showing <span className="font-bold text-white">{paginatedAuctions.length}</span> of{' '}
-          <span className="font-bold text-white">{filteredAuctions.length}</span> auctions
+        <p className="text-xs text-[#8b949e]">
+          Showing <span className="text-[#e6edf3]">{paginatedAuctions.length}</span> of{' '}
+          <span className="text-[#e6edf3]">{filteredAuctions.length}</span> auctions
         </p>
       </div>
 
@@ -259,65 +258,65 @@ function Home() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedAuctions.map((auction) => (
               <div
                 key={auction.id}
-                className="group bg-[#1a1025] rounded-lg border border-[#3d2a54] hover:border-purple-500 transition-all duration-300 overflow-hidden hover:shadow-lg hover:shadow-purple-500/10"
+                className="group bg-[#161b22] rounded-md border border-[#30363d] hover:border-[#8b949e] transition-colors overflow-hidden"
               >
                 {/* Image - Click to go to detail */}
                 <Link to="/auction/$auctionId" params={{ auctionId: auction.id }}>
-                  <div className="h-56 bg-[#0f0a1a] relative overflow-hidden cursor-pointer">
+                  <div className="h-48 bg-[#0d1117] relative overflow-hidden cursor-pointer">
                     {auction.imageUrl ? (
                       <img
                         src={auction.imageUrl}
                         alt={auction.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-500">
+                      <div className="w-full h-full flex items-center justify-center text-[#6e7681]">
                         <div className="text-center">
-                          <div className="text-4xl mb-2">📦</div>
-                          <p className="text-sm">No Image</p>
+                          <div className="text-3xl mb-1">📦</div>
+                          <p className="text-xs">No Image</p>
                         </div>
                       </div>
                     )}
                     {/* Countdown badge */}
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-2 right-2">
                       <CompactCountdown endsAt={auction.endsAt} />
                     </div>
                     {/* Bid count */}
                     {auction._count?.bids > 0 && (
-                      <div className="absolute bottom-3 left-3 bg-[#1a1025]/90 backdrop-blur-md px-2 py-1 rounded-md text-xs font-bold text-purple-400 border border-purple-500/30">
+                      <div className="absolute bottom-2 left-2 bg-[#0d1117]/90 px-2 py-1 rounded-md text-xs font-medium text-[#58a6ff]">
                         🔥 {auction._count.bids} bid{auction._count.bids !== 1 ? 's' : ''}
                       </div>
                     )}
                   </div>
                 </Link>
 
-                <div className="p-6">
+                <div className="p-4">
                   <Link to="/auction/$auctionId" params={{ auctionId: auction.id }}>
-                    <h2 className="text-xl font-bold text-white mb-2 line-clamp-1 hover:text-purple-400 transition-colors cursor-pointer">
+                    <h2 className="text-sm font-semibold text-[#e6edf3] mb-1 line-clamp-1 hover:text-[#58a6ff] transition-colors cursor-pointer">
                       {auction.title}
                     </h2>
                   </Link>
-                  <p className="text-gray-400 text-sm mb-6 line-clamp-2 leading-relaxed">
+                  <p className="text-[#8b949e] text-xs mb-4 line-clamp-2">
                     {auction.description}
                   </p>
 
-                  <div className="flex justify-between items-end border-t border-[#3d2a54] pt-4">
+                  <div className="flex justify-between items-end border-t border-[#30363d] pt-3">
                     <div>
-                      <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">
+                      <p className="text-xs text-[#6e7681] mb-0.5">
                         Current Price
                       </p>
-                      <p className="text-2xl font-mono font-black text-purple-400">
+                      <p className="text-lg font-mono font-semibold text-[#3fb950]">
                         {formatCurrency(auction.currentPrice)}
                       </p>
                     </div>
                     <button
                       onClick={() => handleBidClick(auction)}
-                      className="bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-400 hover:to-violet-500 text-white px-6 py-2.5 rounded-md font-bold transition-all cursor-pointer active:scale-95"
+                      className="bg-[#1f6feb] hover:bg-[#388bfd] text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors"
                     >
                       Bid Now
                     </button>

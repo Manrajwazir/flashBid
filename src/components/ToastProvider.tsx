@@ -58,27 +58,27 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
     const config = {
         success: {
-            bg: 'bg-green-500/20',
-            border: 'border-green-500/30',
-            text: 'text-green-400',
+            bg: 'bg-[#238636]/20',
+            border: 'border-[#238636]/40',
+            text: 'text-[#3fb950]',
             icon: '✓',
         },
         error: {
-            bg: 'bg-red-500/20',
-            border: 'border-red-500/30',
-            text: 'text-red-400',
+            bg: 'bg-[#f85149]/20',
+            border: 'border-[#f85149]/40',
+            text: 'text-[#f85149]',
             icon: '✕',
         },
         warning: {
-            bg: 'bg-yellow-500/20',
-            border: 'border-yellow-500/30',
-            text: 'text-yellow-400',
+            bg: 'bg-[#d29922]/20',
+            border: 'border-[#d29922]/40',
+            text: 'text-[#d29922]',
             icon: '⚠',
         },
         info: {
-            bg: 'bg-blue-500/20',
-            border: 'border-blue-500/30',
-            text: 'text-blue-400',
+            bg: 'bg-[#58a6ff]/20',
+            border: 'border-[#58a6ff]/40',
+            text: 'text-[#58a6ff]',
             icon: 'ℹ',
         },
     }
@@ -87,11 +87,11 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
 
     return (
         <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-md ${bg} border ${border} backdrop-blur-lg shadow-lg animate-slideIn`}
-            style={{ animation: 'slideIn 0.3s ease-out' }}
+            className={`flex items-center gap-3 px-4 py-3 rounded-md ${bg} border ${border} backdrop-blur-sm shadow-lg animate-slideIn`}
+            style={{ animation: 'slideIn 0.2s ease-out' }}
         >
-            <span className={`text-lg ${text}`}>{icon}</span>
-            <p className={`flex-1 text-sm font-medium ${text}`}>{toast.message}</p>
+            <span className={`text-base ${text}`}>{icon}</span>
+            <p className={`flex-1 text-sm ${text}`}>{toast.message}</p>
             <button
                 onClick={onClose}
                 className={`p-1 hover:bg-white/10 rounded transition-colors ${text}`}

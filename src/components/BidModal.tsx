@@ -119,30 +119,30 @@ export function BidModal({ isOpen, onClose, auction, userId, onBidPlaced }: BidM
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={step === 'success' ? '' : 'Place a Bid'} size="md">
             {step === 'input' && (
-                <div className="space-y-6">
+                <div className="space-y-5">
                     {/* Auction Info */}
-                    <div className="flex items-center gap-4 p-4 bg-[#0f0a1a] rounded-lg border border-[#3d2a54]">
+                    <div className="flex items-center gap-4 p-4 bg-[#0d1117] rounded-md border border-[#30363d]">
                         {auction.imageUrl && (
                             <img
                                 src={auction.imageUrl}
                                 alt={auction.title}
-                                className="w-16 h-16 object-cover rounded-md"
+                                className="w-14 h-14 object-cover rounded-md"
                             />
                         )}
                         <div>
-                            <h3 className="font-bold text-white">{auction.title}</h3>
-                            <p className="text-sm text-gray-400">Current price</p>
-                            <p className="text-xl font-mono font-bold text-purple-400">
+                            <h3 className="font-semibold text-[#e6edf3]">{auction.title}</h3>
+                            <p className="text-xs text-[#8b949e]">Current price</p>
+                            <p className="text-lg font-mono font-semibold text-[#3fb950]">
                                 {formatCurrency(auction.currentPrice)}
                             </p>
                         </div>
                     </div>
 
                     {/* Minimum bid info */}
-                    <div className="text-center p-3 bg-purple-500/10 rounded-lg border border-purple-500/30">
-                        <p className="text-sm text-purple-300">
-                            Minimum bid: <span className="font-bold">{formatCurrency(minBid)}</span>
-                            <span className="text-purple-400 ml-1">
+                    <div className="text-center p-3 bg-[#58a6ff]/10 rounded-md">
+                        <p className="text-sm text-[#58a6ff]">
+                            Minimum bid: <span className="font-semibold">{formatCurrency(minBid)}</span>
+                            <span className="text-[#58a6ff]/70 ml-1">
                                 (+{formatCurrency(minIncrement)} increment)
                             </span>
                         </p>
@@ -150,13 +150,13 @@ export function BidModal({ isOpen, onClose, auction, userId, onBidPlaced }: BidM
 
                     {/* Quick bid buttons */}
                     <div>
-                        <p className="text-sm font-semibold text-gray-300 mb-2">Quick bid:</p>
+                        <p className="text-xs text-[#8b949e] mb-2">Quick bid:</p>
                         <div className="flex flex-wrap gap-2">
                             {QUICK_BID_INCREMENTS.map((increment) => (
                                 <button
                                     key={increment}
                                     onClick={() => handleQuickBid(increment)}
-                                    className="px-4 py-2 bg-[#2d1f40] hover:bg-[#3d2a54] rounded-md font-semibold text-gray-300 transition-colors border border-[#3d2a54]"
+                                    className="px-3 py-1.5 bg-[#21262d] hover:bg-[#30363d] rounded-md text-sm text-[#8b949e] transition-colors border border-[#30363d]"
                                 >
                                     +${increment}
                                 </button>
@@ -166,11 +166,11 @@ export function BidModal({ isOpen, onClose, auction, userId, onBidPlaced }: BidM
 
                     {/* Custom amount input */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-300 mb-2">
+                        <label className="block text-xs text-[#8b949e] mb-2">
                             Your bid amount:
                         </label>
                         <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6e7681]">
                                 $
                             </span>
                             <input
@@ -178,14 +178,14 @@ export function BidModal({ isOpen, onClose, auction, userId, onBidPlaced }: BidM
                                 inputMode="decimal"
                                 value={bidAmount}
                                 onChange={(e) => handleInputChange(e.target.value)}
-                                className={`w-full pl-8 pr-4 py-3 text-xl font-mono font-bold rounded-md transition-colors focus:outline-none bg-[#0f0a1a] text-white ${error
-                                        ? 'border-2 border-red-500 focus:border-red-500'
-                                        : 'border border-[#3d2a54] focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20'
+                                className={`w-full pl-7 pr-4 py-2.5 text-lg font-mono font-semibold rounded-md transition-colors focus:outline-none bg-[#0d1117] text-[#e6edf3] ${error
+                                    ? 'border-2 border-[#f85149] focus:border-[#f85149]'
+                                    : 'border border-[#30363d] focus:border-[#58a6ff]'
                                     }`}
                                 placeholder={minBid.toFixed(2)}
                             />
                         </div>
-                        {error && <p className="mt-2 text-sm text-red-400 font-medium">{error}</p>}
+                        {error && <p className="mt-2 text-sm text-[#f85149]">{error}</p>}
                     </div>
 
                     {/* Continue button */}
@@ -196,29 +196,29 @@ export function BidModal({ isOpen, onClose, auction, userId, onBidPlaced }: BidM
             )}
 
             {step === 'confirm' && (
-                <div className="space-y-6">
+                <div className="space-y-5">
                     <div className="text-center">
-                        <div className="text-6xl mb-4">⚡️</div>
-                        <h3 className="text-xl font-bold text-white mb-2">Confirm Your Bid</h3>
-                        <p className="text-gray-400">You are about to place a bid on:</p>
+                        <div className="text-5xl mb-3">⚡</div>
+                        <h3 className="text-lg font-semibold text-[#e6edf3] mb-1">Confirm Your Bid</h3>
+                        <p className="text-sm text-[#8b949e]">You are about to place a bid on:</p>
                     </div>
 
-                    <div className="p-4 bg-[#0f0a1a] rounded-lg border border-[#3d2a54] text-center">
-                        <p className="font-bold text-white mb-2">{auction.title}</p>
-                        <p className="text-3xl font-mono font-black text-purple-400">
+                    <div className="p-4 bg-[#0d1117] rounded-md border border-[#30363d] text-center">
+                        <p className="font-medium text-[#e6edf3] mb-2">{auction.title}</p>
+                        <p className="text-2xl font-mono font-bold text-[#3fb950]">
                             {formatCurrency(parsedBidAmount)}
                         </p>
                     </div>
 
-                    <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                        <p className="text-sm text-yellow-400">
+                    <div className="p-3 bg-[#d29922]/10 border border-[#d29922]/30 rounded-md">
+                        <p className="text-sm text-[#d29922]">
                             ⚠️ By confirming, you agree to pay this amount if you win the auction.
                         </p>
                     </div>
 
                     {error && (
-                        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-                            <p className="text-sm text-red-400 font-medium">{error}</p>
+                        <div className="p-3 bg-[#f85149]/10 border border-[#f85149]/30 rounded-md">
+                            <p className="text-sm text-[#f85149]">{error}</p>
                         </div>
                     )}
 
@@ -235,16 +235,16 @@ export function BidModal({ isOpen, onClose, auction, userId, onBidPlaced }: BidM
 
             {step === 'success' && (
                 <div className="text-center py-6">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-500 to-violet-600 rounded-full mb-6">
-                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-[#238636] rounded-full mb-4">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">Bid Placed! 🎉</h3>
-                    <p className="text-gray-400 mb-4">
-                        Your bid of <span className="font-bold text-purple-400">{formatCurrency(parsedBidAmount)}</span> has been placed.
+                    <h3 className="text-xl font-semibold text-[#e6edf3] mb-2">Bid Placed! 🎉</h3>
+                    <p className="text-[#8b949e] mb-4">
+                        Your bid of <span className="font-semibold text-[#3fb950]">{formatCurrency(parsedBidAmount)}</span> has been placed.
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs text-[#6e7681]">
                         You'll be notified if you're outbid.
                     </p>
                 </div>

@@ -59,19 +59,19 @@ export function CountdownTimer({ endsAt, onExpire, size = 'md' }: CountdownTimer
 
     const sizeClasses = {
         sm: 'text-sm',
-        md: 'text-lg',
-        lg: 'text-2xl',
+        md: 'text-base',
+        lg: 'text-xl',
     }
 
     const urgencyClasses = {
-        normal: 'text-gray-300',
-        warning: 'text-yellow-400',
-        critical: 'text-red-400 animate-pulse',
-        ended: 'text-gray-500',
+        normal: 'text-[#8b949e]',
+        warning: 'text-[#d29922]',
+        critical: 'text-[#f85149] animate-pulse',
+        ended: 'text-[#6e7681]',
     }
 
     return (
-        <div className={`font-mono font-bold ${sizeClasses[size]} ${urgencyClasses[urgency]}`}>
+        <div className={`font-mono font-medium ${sizeClasses[size]} ${urgencyClasses[urgency]}`}>
             {urgency === 'critical' && <span className="mr-1">⏰</span>}
             {timeRemaining}
         </div>
@@ -134,15 +134,15 @@ export function CompactCountdown({ endsAt, onExpire }: CompactCountdownProps) {
     }, [endsAt]) // Only depend on endsAt, not onExpire
 
     const urgencyClasses = {
-        normal: 'bg-[#1a1025]/90 text-gray-300 border-[#3d2a54]',
-        warning: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-        critical: 'bg-red-500/20 text-red-400 border-red-500/30 animate-pulse',
-        ended: 'bg-gray-500/20 text-gray-500 border-gray-500/30',
+        normal: 'bg-[#21262d] text-[#8b949e]',
+        warning: 'bg-[#d29922]/20 text-[#d29922]',
+        critical: 'bg-[#f85149]/20 text-[#f85149] animate-pulse',
+        ended: 'bg-[#21262d] text-[#6e7681]',
     }
 
     return (
         <div
-            className={`px-2 py-1 rounded-md text-xs font-mono font-bold backdrop-blur-md border ${urgencyClasses[urgency]}`}
+            className={`px-2 py-0.5 rounded text-xs font-mono ${urgencyClasses[urgency]}`}
         >
             {urgency === 'critical' && '⏰ '}
             {timeRemaining}

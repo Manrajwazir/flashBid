@@ -36,15 +36,15 @@ export function Pagination({
     }
 
     const buttonClass = (isActive: boolean, isDisabled: boolean = false) =>
-        `px-3 py-2 rounded-md font-semibold transition-all ${isDisabled
-            ? 'bg-[#1a1025] text-gray-600 cursor-not-allowed'
+        `px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isDisabled
+            ? 'bg-[#21262d] text-[#6e7681] cursor-not-allowed'
             : isActive
-                ? 'bg-gradient-to-r from-purple-500 to-violet-600 text-white'
-                : 'bg-[#2d1f40] text-gray-300 hover:bg-[#3d2a54] border border-[#3d2a54]'
+                ? 'bg-[#1f6feb] text-white'
+                : 'bg-[#21262d] text-[#8b949e] hover:bg-[#30363d] border border-[#30363d]'
         }`
 
     return (
-        <nav className="flex items-center justify-center gap-2 flex-wrap" aria-label="Pagination">
+        <nav className="flex items-center justify-center gap-1 flex-wrap" aria-label="Pagination">
             {showFirstLast && (
                 <button
                     onClick={() => onPageChange(1)}
@@ -67,7 +67,7 @@ export function Pagination({
 
             {getPageNumbers().map((page, index) =>
                 page === 'ellipsis' ? (
-                    <span key={`ellipsis-${index}`} className="px-3 py-2 text-gray-500">
+                    <span key={`ellipsis-${index}`} className="px-2 py-1.5 text-[#6e7681]">
                         ...
                     </span>
                 ) : (
@@ -118,11 +118,11 @@ export function ItemsPerPageSelector({
 }: ItemsPerPageSelectorProps) {
     return (
         <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">Show:</span>
+            <span className="text-xs text-[#8b949e]">Show:</span>
             <select
                 value={value}
                 onChange={(e) => onChange(Number(e.target.value))}
-                className="px-3 py-2 rounded-md bg-[#2d1f40] border border-[#3d2a54] text-white font-semibold focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+                className="px-2 py-1 rounded-md bg-[#21262d] border border-[#30363d] text-[#e6edf3] text-sm focus:border-[#58a6ff] focus:outline-none transition-colors"
             >
                 {options.map((option) => (
                     <option key={option} value={option}>

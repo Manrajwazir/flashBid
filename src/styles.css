@@ -1,107 +1,205 @@
 @import "tailwindcss";
 
 :root {
-  /* Dark Purple Theme */
-  --bg-primary: #0f0a1a;
-  --bg-secondary: #1a1025;
-  --bg-card: #231730;
-  --bg-elevated: #2d1f40;
-  
-  --accent-primary: #a855f7;
-  --accent-secondary: #7c3aed;
-  --accent-glow: rgba(168, 85, 247, 0.3);
-  
-  --text-primary: #f8fafc;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  
-  --border-color: #3d2a54;
-  --border-hover: #6b21a8;
-  
-  --success: #22c55e;
-  --warning: #eab308;
-  --danger: #ef4444;
-  --info: #3b82f6;
+  /* GitHub Dark Theme */
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-card: #21262d;
+  --bg-elevated: #30363d;
+
+  --accent-primary: #58a6ff;
+  --accent-secondary: #1f6feb;
+  --accent-green: #3fb950;
+  --accent-purple: #a371f7;
+  --accent-orange: #d29922;
+
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+
+  --border-color: #30363d;
+  --border-hover: #8b949e;
+
+  --success: #3fb950;
+  --warning: #d29922;
+  --danger: #f85149;
+  --info: #58a6ff;
+
+  /* Minimal rounding */
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 6px;
 }
 
 body {
   @apply m-0;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--bg-primary);
   color: var(--text-primary);
 }
 
-/* Dark Purple Theme Classes */
-.bg-dark-primary { background-color: var(--bg-primary); }
-.bg-dark-secondary { background-color: var(--bg-secondary); }
-.bg-dark-card { background-color: var(--bg-card); }
-.bg-dark-elevated { background-color: var(--bg-elevated); }
-
-.text-dark-primary { color: var(--text-primary); }
-.text-dark-secondary { color: var(--text-secondary); }
-.text-dark-muted { color: var(--text-muted); }
-
-.border-dark { border-color: var(--border-color); }
-.border-dark-hover:hover { border-color: var(--border-hover); }
-
-.accent-glow {
-  box-shadow: 0 0 20px var(--accent-glow);
+/* GitHub Dark Theme Classes */
+.bg-dark-primary {
+  background-color: var(--bg-primary);
 }
 
-/* Sharper corners - override Tailwind's rounded classes */
-.rounded-sharp { border-radius: 4px; }
-.rounded-sharp-md { border-radius: 6px; }
-.rounded-sharp-lg { border-radius: 8px; }
-
-/* Purple gradient button */
-.btn-purple {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: white;
-  font-weight: 700;
-  transition: all 0.2s ease;
-}
-
-.btn-purple:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
-}
-
-.btn-purple:active {
-  transform: scale(0.98);
-}
-
-/* Card hover effect */
-.card-dark {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-color);
-  transition: all 0.2s ease;
-}
-
-.card-dark:hover {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
-}
-
-/* Input styling */
-.input-dark {
+.bg-dark-secondary {
   background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+}
+
+.bg-dark-card {
+  background-color: var(--bg-card);
+}
+
+.bg-dark-elevated {
+  background-color: var(--bg-elevated);
+}
+
+.text-dark-primary {
   color: var(--text-primary);
-  transition: all 0.2s ease;
 }
 
-.input-dark:focus {
-  border-color: var(--accent-primary);
-  outline: none;
-  box-shadow: 0 0 0 3px var(--accent-glow);
+.text-dark-secondary {
+  color: var(--text-secondary);
 }
 
-.input-dark::placeholder {
+.text-dark-muted {
   color: var(--text-muted);
 }
 
+.border-dark {
+  border-color: var(--border-color);
+}
+
+.border-dark-hover:hover {
+  border-color: var(--border-hover);
+}
+
+/* Minimal rounding - GitHub style */
+.rounded-gh {
+  border-radius: var(--radius-sm);
+}
+
+.rounded-gh-md {
+  border-radius: var(--radius-md);
+}
+
+.rounded-gh-lg {
+  border-radius: var(--radius-lg);
+}
+
+/* Primary button - GitHub blue */
+.btn-primary {
+  background-color: var(--accent-secondary);
+  color: white;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: background-color 0.15s ease;
+}
+
+.btn-primary:hover {
+  background-color: #388bfd;
+}
+
+.btn-primary:disabled {
+  background-color: #21262d;
+  color: #8b949e;
+  cursor: not-allowed;
+}
+
+/* Secondary button - GitHub outline */
+.btn-secondary {
+  background-color: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--bg-elevated);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+/* Green button - for success actions */
+.btn-green {
+  background-color: #238636;
+  color: white;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: background-color 0.15s ease;
+}
+
+.btn-green:hover {
+  background-color: #2ea043;
+}
+
+/* Card - GitHub style */
+.card-gh {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s ease;
+}
+
+.card-gh:hover {
+  border-color: var(--border-hover);
+}
+
+/* Input styling - GitHub style */
+.input-gh {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  transition: border-color 0.15s ease;
+}
+
+.input-gh:focus {
+  border-color: var(--accent-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.3);
+}
+
+.input-gh::placeholder {
+  color: var(--text-muted);
+}
+
+/* Badge styles */
+.badge-blue {
+  background-color: rgba(56, 139, 253, 0.15);
+  color: #58a6ff;
+  border-radius: 2em;
+}
+
+.badge-green {
+  background-color: rgba(63, 185, 80, 0.15);
+  color: #3fb950;
+  border-radius: 2em;
+}
+
+.badge-red {
+  background-color: rgba(248, 81, 73, 0.15);
+  color: #f85149;
+  border-radius: 2em;
+}
+
+.badge-orange {
+  background-color: rgba(210, 153, 34, 0.15);
+  color: #d29922;
+  border-radius: 2em;
+}
+
+.badge-purple {
+  background-color: rgba(163, 113, 247, 0.15);
+  color: #a371f7;
+  border-radius: 2em;
+}
+
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, "Liberation Mono", monospace;
 }

@@ -315,13 +315,22 @@ export const createAuction = createServerFn({ method: 'POST' })
 
     // Validate image URL if provided
     if (validated.imageUrl) {
-      try {
-        const url = new URL(validated.imageUrl)
-        if (!['http:', 'https:'].includes(url.protocol)) {
-          throw new Error('Image URL must use HTTP or HTTPS')
+      // Allow data: URLs for file uploads
+      if (validated.imageUrl.startsWith('data:')) {
+        // Validate it's an image data URL
+        if (!validated.imageUrl.startsWith('data:image/')) {
+          throw new Error('Invalid image data format')
         }
-      } catch {
-        throw new Error('Invalid image URL format')
+      } else {
+        // Validate regular URLs
+        try {
+          const url = new URL(validated.imageUrl)
+          if (!['http:', 'https:'].includes(url.protocol)) {
+            throw new Error('Image URL must use HTTP or HTTPS')
+          }
+        } catch {
+          throw new Error('Invalid image URL format')
+        }
       }
     }
 
