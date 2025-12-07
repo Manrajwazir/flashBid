@@ -1,28 +1,25 @@
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"] 
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
   provider = "postgresql"
 }
-// --- BETTER AUTH MODELS (Required for the Bonus) ---
+
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified Boolean?
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  sessions      Session[]
-  accounts      Account[]
-  
-  // App Specific Relations
-  sellerAuctions Auction[] @relation("SellerAuctions") // Auctions created by this user
-  wonAuctions    Auction[] @relation("WonAuctions")    // Auctions won by this user
-  bids           Bid[]     // Bids placed by this user
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  Boolean?
+  image          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  sellerAuctions Auction[] @relation("SellerAuctions")
+  wonAuctions    Auction[] @relation("WonAuctions")
+  bids           Bid[]
+  accounts       Account[]
+  sessions       Session[]
 
   @@map("user")
 }
@@ -30,16 +27,14 @@ model User {
 model Session {
   id        String   @id @default(cuid())
   userId    String
-  token     String
+  token     String   @unique
   expiresAt DateTime
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
   @@map("session")
 }
 
@@ -50,14 +45,13 @@ model Account {
   providerId            String
   accessToken           String?
   refreshToken          String?
-  idToken               String?
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
-
+  idToken               String?
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("account")
@@ -74,48 +68,35 @@ model Verification {
   @@map("verification")
 }
 
-// --- FLASHBID SPECIFIC MODELS ---
-
 model Auction {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  imageUrl    String?
-  
-  startPrice  Float
-  currentPrice Float   @default(0) // Updates with every bid
-  
-  startsAt    DateTime @default(now())
-  endsAt      DateTime
-  
-  status      AuctionStatus @default(OPEN)
-  
-  sellerId    String
-  seller      User     @relation("SellerAuctions", fields: [sellerId], references: [id])
-  
-  // Winner tracking
-  winnerId    String?
-  winner      User?    @relation("WonAuctions", fields: [winnerId], references: [id])
-  
-  bids        Bid[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String        @id @default(cuid())
+  title        String
+  description  String
+  imageUrl     String?
+  startPrice   Float
+  currentPrice Float         @default(0)
+  startsAt     DateTime      @default(now())
+  endsAt       DateTime
+  status       AuctionStatus @default(OPEN)
+  sellerId     String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  winnerId     String?
+  seller       User          @relation("SellerAuctions", fields: [sellerId], references: [id])
+  winner       User?         @relation("WonAuctions", fields: [winnerId], references: [id])
+  bids         Bid[]
 
-  @@index([status, endsAt]) // Index for the Deno worker to find expired items fast
+  @@index([status, endsAt])
 }
 
 model Bid {
   id        String   @id @default(cuid())
   amount    Float
-  
   auctionId String
-  auction   Auction  @relation(fields: [auctionId], references: [id])
-  
   bidderId  String
-  bidder    User     @relation(fields: [bidderId], references: [id])
-  
   createdAt DateTime @default(now())
+  auction   Auction  @relation(fields: [auctionId], references: [id])
+  bidder    User     @relation(fields: [bidderId], references: [id])
 
   @@index([auctionId])
 }

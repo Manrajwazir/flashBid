@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useSession, getCurrentUserId } from '../lib/auth-client'
+import { useSession, getCurrentUserId, setCurrentUserId } from '../lib/auth-client'
 import { useState, useEffect } from 'react'
 import { getUserBids, getUserAuctions, getWonAuctions, getSoldAuctions, deleteAuction } from '../server/functions'
 import { Badge } from '../components/ui/Badge'
@@ -25,6 +25,13 @@ function DashboardPage() {
     const [isDeleting, setIsDeleting] = useState<string | null>(null)
 
     useEffect(() => {
+        // Sync user ID with session
+        if (session?.user?.id) {
+            setCurrentUserId(session.user.id)
+        } else if (!isPending) {
+            setCurrentUserId(null)
+        }
+
         async function loadData() {
             const userId = getCurrentUserId()
             if (!userId) {
