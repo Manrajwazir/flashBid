@@ -175,6 +175,70 @@ function AuctionDetailPage() {
                             </p>
                         </div>
 
+                        {/* Winner Banner - Shows when auction is ended */}
+                        {isAuctionEnded && bidHistory.length > 0 && (
+                            <div className={`rounded-md p-4 border ${session?.user?.id === bidHistory[0]?.bidder?.id
+                                    ? 'bg-[#238636]/20 border-[#238636]'
+                                    : session?.user?.id === auction.seller.id
+                                        ? 'bg-[#58a6ff]/20 border-[#58a6ff]'
+                                        : 'bg-[#161b22] border-[#30363d]'
+                                }`}>
+                                {session?.user?.id === bidHistory[0]?.bidder?.id ? (
+                                    <>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-2xl">🏆</span>
+                                            <span className="text-xl font-bold text-[#3fb950]">You Won!</span>
+                                        </div>
+                                        <p className="text-[#8b949e] text-sm mb-3">
+                                            Contact the seller to arrange payment and pickup.
+                                        </p>
+                                        <div className="bg-[#0d1117] rounded-md p-3 border border-[#30363d]">
+                                            <p className="text-xs text-[#8b949e] mb-1">Seller Contact</p>
+                                            <p className="text-[#e6edf3] font-medium">{auction.seller.name}</p>
+                                            <p className="text-[#58a6ff] text-sm">{auction.seller.email}</p>
+                                        </div>
+                                    </>
+                                ) : session?.user?.id === auction.seller.id ? (
+                                    <>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-2xl">💰</span>
+                                            <span className="text-xl font-bold text-[#58a6ff]">Item Sold!</span>
+                                        </div>
+                                        <p className="text-[#8b949e] text-sm mb-3">
+                                            Your item sold for {formatCurrency(currentPrice)}!
+                                        </p>
+                                        <div className="bg-[#0d1117] rounded-md p-3 border border-[#30363d]">
+                                            <p className="text-xs text-[#8b949e] mb-1">Winner</p>
+                                            <p className="text-[#e6edf3] font-medium">{bidHistory[0]?.bidder?.name || 'Anonymous'}</p>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-2xl">🔒</span>
+                                            <span className="text-xl font-bold text-[#e6edf3]">Auction Ended</span>
+                                        </div>
+                                        <p className="text-[#8b949e] text-sm">
+                                            Won by <span className="text-[#e6edf3] font-medium">{bidHistory[0]?.bidder?.name || 'Anonymous'}</span> for {formatCurrency(currentPrice)}
+                                        </p>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        {/* No bids message for ended auctions */}
+                        {isAuctionEnded && bidHistory.length === 0 && (
+                            <div className="bg-[#161b22] rounded-md p-4 border border-[#30363d]">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-2xl">😔</span>
+                                    <span className="text-xl font-bold text-[#8b949e]">No Bids</span>
+                                </div>
+                                <p className="text-[#6e7681] text-sm">
+                                    This auction ended without any bids.
+                                </p>
+                            </div>
+                        )}
+
                         {/* Timer */}
                         <div className="bg-[#161b22] rounded-md p-4 border border-[#30363d]">
                             <p className="text-xs text-[#8b949e] mb-2">Time Remaining</p>

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useSession, getCurrentUserId } from '../lib/auth-client'
 import { useState, useEffect } from 'react'
-import { getUserBids, getUserAuctions, deleteAuction } from '../server/functions'
+import { getUserBids, getUserAuctions, getWonAuctions, getSoldAuctions, deleteAuction } from '../server/functions'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { CompactCountdown } from '../components/ui/CountdownTimer'
@@ -18,8 +18,10 @@ function DashboardPage() {
     const toast = useToast()
     const [bids, setBids] = useState<any[]>([])
     const [auctions, setAuctions] = useState<any[]>([])
+    const [wonAuctions, setWonAuctions] = useState<any[]>([])
+    const [soldAuctions, setSoldAuctions] = useState<any[]>([])
     const [dataLoading, setDataLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState<'bids' | 'listings'>('bids')
+    const [activeTab, setActiveTab] = useState<'bids' | 'listings' | 'won' | 'sold'>('bids')
     const [isDeleting, setIsDeleting] = useState<string | null>(null)
 
     useEffect(() => {
@@ -31,12 +33,16 @@ function DashboardPage() {
             }
 
             try {
-                const [bidsResult, auctionsResult] = await Promise.all([
+                const [bidsResult, auctionsResult, wonResult, soldResult] = await Promise.all([
                     getUserBids({ data: { userId } } as any),
                     getUserAuctions({ data: { userId } } as any),
+                    getWonAuctions({ data: { userId } } as any),
+                    getSoldAuctions({ data: { userId } } as any),
                 ])
                 setBids(bidsResult)
                 setAuctions(auctionsResult)
+                setWonAuctions(wonResult)
+                setSoldAuctions(soldResult)
             } catch (error) {
                 console.error('Failed to load dashboard data:', error)
                 toast.error('Failed to load dashboard data')
@@ -57,12 +63,16 @@ function DashboardPage() {
         if (!userId) return
 
         try {
-            const [bidsResult, auctionsResult] = await Promise.all([
+            const [bidsResult, auctionsResult, wonResult, soldResult] = await Promise.all([
                 getUserBids({ data: { userId } } as any),
                 getUserAuctions({ data: { userId } } as any),
+                getWonAuctions({ data: { userId } } as any),
+                getSoldAuctions({ data: { userId } } as any),
             ])
             setBids(bidsResult)
             setAuctions(auctionsResult)
+            setWonAuctions(wonResult)
+            setSoldAuctions(soldResult)
         } catch (error) {
             console.error('Failed to refresh data:', error)
         }
@@ -147,19 +157,38 @@ function DashboardPage() {
                             >
                                 My Listings ({auctions.length})
                             </button>
+                            <button
+                                onClick={() => setActiveTab('won')}
+                                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'won'
+                                    ? 'bg-[#1f6feb] text-white'
+                                    : 'bg-[#0d1117] text-[#8b949e] hover:text-[#e6edf3]'
+                                    }`}
+                            >
+                                Won ({wonAuctions.length})
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('sold')}
+                                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'sold'
+                                    ? 'bg-[#1f6feb] text-white'
+                                    : 'bg-[#0d1117] text-[#8b949e] hover:text-[#e6edf3]'
+                                    }`}
+                            >
+                                Sold ({soldAuctions.length})
+                            </button>
                         </nav>
                     </div>
 
                     <div className="p-4">
-                        {activeTab === 'bids' ? (
-                            <MyBids bids={bids} />
-                        ) : (
+                        {activeTab === 'bids' && <MyBids bids={bids} />}
+                        {activeTab === 'listings' && (
                             <MyListings
                                 auctions={auctions}
                                 onDelete={handleDelete}
                                 isDeleting={isDeleting}
                             />
                         )}
+                        {activeTab === 'won' && <WonAuctions auctions={wonAuctions} />}
+                        {activeTab === 'sold' && <SoldAuctions auctions={soldAuctions} />}
                     </div>
                 </div>
             </div>
@@ -366,6 +395,144 @@ function MyListings({
                     ))}
                 </tbody>
             </table>
+        </div>
+    )
+}
+
+function WonAuctions({ auctions }: { auctions: any[] }) {
+    if (auctions.length === 0) {
+        return (
+            <div className="text-center py-8">
+                <div className="text-4xl mb-3">🏆</div>
+                <h3 className="text-base font-medium text-[#e6edf3] mb-1">No Auctions Won Yet</h3>
+                <p className="text-sm text-[#8b949e] mb-4">Keep bidding to win awesome items!</p>
+                <Link to="/">
+                    <Button>Browse Auctions</Button>
+                </Link>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-4">
+            {auctions.map((auction) => (
+                <div key={auction.id} className="bg-[#0d1117] rounded-md border border-[#238636] p-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                        {auction.imageUrl && (
+                            <img
+                                src={auction.imageUrl}
+                                alt={auction.title}
+                                className="w-24 h-24 object-cover rounded-md flex-shrink-0"
+                            />
+                        )}
+                        <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h3 className="font-semibold text-[#e6edf3] text-lg">{auction.title}</h3>
+                                    <p className="text-sm text-[#8b949e] mb-2">{auction.description}</p>
+                                </div>
+                                <Badge variant="success">YOU WON</Badge>
+                            </div>
+
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-sm text-[#8b949e]">Winning Price:</span>
+                                <span className="text-xl font-bold text-[#3fb950]">{formatCurrency(auction.currentPrice)}</span>
+                            </div>
+
+                            <div className="bg-[#161b22] rounded p-3 border border-[#30363d] flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs text-[#8b949e]">Seller Contact</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className="w-6 h-6 rounded-full bg-[#30363d] flex items-center justify-center text-xs overflow-hidden">
+                                            {auction.seller.image ? (
+                                                <img src={auction.seller.image} alt={auction.seller.name || 'Seller'} />
+                                            ) : (
+                                                <span>👤</span>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-[#e6edf3]">{auction.seller.name || 'Unknown Seller'}</p>
+                                            <p className="text-xs text-[#58a6ff]">{auction.seller.email || 'No email provided'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <Button variant="secondary" onClick={() => window.location.href = `mailto:${auction.seller.email}?subject=Payment for ${auction.title}`}>
+                                    Email Seller
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function SoldAuctions({ auctions }: { auctions: any[] }) {
+    if (auctions.length === 0) {
+        return (
+            <div className="text-center py-8">
+                <div className="text-4xl mb-3">💰</div>
+                <h3 className="text-base font-medium text-[#e6edf3] mb-1">No Items Sold Yet</h3>
+                <p className="text-sm text-[#8b949e] mb-4">List more items to start earning!</p>
+                <Link to="/sell">
+                    <Button>List Item</Button>
+                </Link>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-4">
+            {auctions.map((auction) => (
+                <div key={auction.id} className="bg-[#0d1117] rounded-md border border-[#58a6ff] p-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                        {auction.imageUrl && (
+                            <img
+                                src={auction.imageUrl}
+                                alt={auction.title}
+                                className="w-24 h-24 object-cover rounded-md flex-shrink-0"
+                            />
+                        )}
+                        <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h3 className="font-semibold text-[#e6edf3] text-lg">{auction.title}</h3>
+                                    <p className="text-sm text-[#8b949e] mb-2">{auction.description}</p>
+                                </div>
+                                <Badge variant="info">SOLD</Badge>
+                            </div>
+
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-sm text-[#8b949e]">Sold For:</span>
+                                <span className="text-xl font-bold text-[#58a6ff]">{formatCurrency(auction.currentPrice)}</span>
+                            </div>
+
+                            <div className="bg-[#161b22] rounded p-3 border border-[#30363d] flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs text-[#8b949e]">Winner</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className="w-6 h-6 rounded-full bg-[#30363d] flex items-center justify-center text-xs overflow-hidden">
+                                            {auction.winner?.image ? (
+                                                <img src={auction.winner.image} alt={auction.winner.name || 'Winner'} />
+                                            ) : (
+                                                <span>👤</span>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-[#e6edf3]">{auction.winner?.name || 'Unknown Winner'}</p>
+                                            <p className="text-xs text-[#58a6ff]">{auction.winner?.email || 'No email provided'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <Button variant="secondary" onClick={() => window.location.href = `mailto:${auction.winner?.email}?subject=Payment for ${auction.title}`}>
+                                    Email Winner
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ))}
         </div>
     )
 }

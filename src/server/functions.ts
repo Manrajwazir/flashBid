@@ -162,7 +162,7 @@ export const getAuctionById = createServerFn({ method: 'GET' })
       where: { id: data.auctionId },
       include: {
         seller: {
-          select: { id: true, name: true, image: true, createdAt: true },
+          select: { id: true, name: true, email: true, image: true, createdAt: true },
         },
         bids: {
           orderBy: { createdAt: 'desc' },
@@ -435,18 +435,95 @@ export const deleteAuction = createServerFn({ method: 'POST' })
     return { success: true }
   })
 
-// Close expired auctions (can be called by a cron job)
+// Close expired auctions with winner handling
 export const closeExpiredAuctions = createServerFn({ method: 'POST' })
   .handler(async () => {
-    const result = await prisma.auction.updateMany({
+    // Find all expired auctions that are still open
+    const expiredAuctions = await prisma.auction.findMany({
       where: {
         status: 'OPEN',
         endsAt: { lt: new Date() },
       },
-      data: { status: 'CLOSED' },
+      include: {
+        bids: {
+          orderBy: { amount: 'desc' },
+          take: 1,
+          include: { bidder: true }
+        }
+      }
     })
 
-    return { closedCount: result.count }
+    let closedCount = 0
+
+    for (const auction of expiredAuctions) {
+      const highestBid = auction.bids[0]
+
+      await prisma.auction.update({
+        where: { id: auction.id },
+        data: {
+          status: 'CLOSED',
+          winnerId: highestBid?.bidderId || null,
+        }
+      })
+      closedCount++
+    }
+
+    return { closedCount }
+  })
+
+// Get auctions won by a user
+export const getWonAuctions = createServerFn({ method: 'GET' })
+  .handler(async (ctx) => {
+    const data = (ctx as any).data as { userId?: string } | undefined
+    const userId = data?.userId
+
+    if (!userId) {
+      throw new Error('You must be logged in')
+    }
+
+    const wonAuctions = await prisma.auction.findMany({
+      where: {
+        winnerId: userId,
+        status: 'CLOSED',
+      },
+      include: {
+        seller: {
+          select: { id: true, name: true, email: true, image: true }
+        },
+        _count: { select: { bids: true } }
+      },
+      orderBy: { endsAt: 'desc' },
+    })
+
+    return wonAuctions
+  })
+
+// Get auctions sold by a user (where they are the seller and auction is closed with a winner)
+export const getSoldAuctions = createServerFn({ method: 'GET' })
+  .handler(async (ctx) => {
+    const data = (ctx as any).data as { userId?: string } | undefined
+    const userId = data?.userId
+
+    if (!userId) {
+      throw new Error('You must be logged in')
+    }
+
+    const soldAuctions = await prisma.auction.findMany({
+      where: {
+        sellerId: userId,
+        status: 'CLOSED',
+        winnerId: { not: null },
+      },
+      include: {
+        winner: {
+          select: { id: true, name: true, email: true, image: true }
+        },
+        _count: { select: { bids: true } }
+      },
+      orderBy: { endsAt: 'desc' },
+    })
+
+    return soldAuctions
   })
 
 // ======== AUTH FUNCTIONS ========

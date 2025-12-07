@@ -204,7 +204,17 @@ export function AIAuctioneer({
     // Auction end
     useEffect(() => {
         if (isEnded && commentary.length > 0 && !commentary.some(c => c.type === 'end')) {
-            addCommentary(`SOLD! Congratulations to the winner! This ${auctionTitle} has sold for $${currentPrice.toFixed(2)}! What a fantastic auction!`, 'end', true)
+            const hasWinner = auctionTitle && currentPrice > startPrice
+            let endMessage = ''
+
+            if (hasWinner) {
+                // If we have a winner (logic simplified since we don't have direct winner object here, inferring from price)
+                endMessage = `SOLD! The ${auctionTitle} is officially SOLD for ${currentPrice.toFixed(2)}! Congratulations to the winner! Please check your dashboard for contact details.`
+            } else {
+                endMessage = `And that's it! The auction for ${auctionTitle} has ended without a sale.`
+            }
+
+            addCommentary(endMessage, 'end', true)
         }
     }, [isEnded, commentary, auctionTitle, currentPrice, addCommentary])
 
