@@ -105,7 +105,14 @@ export function Navbar() {
                                 className="px-3 py-2 text-[#8b949e] hover:bg-[#21262d] rounded-md text-sm"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
-                                Browse
+                                About
+                            </Link>
+                            <Link
+                                to="/auctions"
+                                className="px-3 py-2 text-[#8b949e] hover:bg-[#21262d] rounded-md text-sm"
+                                onClick={() => setMobileMenuOpen(false)}
+                            >
+                                Auctions
                             </Link>
 
                             {session?.user ? (
