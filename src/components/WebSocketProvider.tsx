@@ -34,7 +34,19 @@ interface WebSocketContextValue {
 
 const WebSocketContext = createContext<WebSocketContextValue | null>(null)
 
-const WS_URL = 'ws://localhost:3001'
+// Dynamic WebSocket URL: use production URL when deployed, localhost for dev
+const getWsUrl = () => {
+    if (typeof window === 'undefined') return 'ws://localhost:3001'
+
+    const isProduction = window.location.hostname !== 'localhost'
+    if (isProduction) {
+        // In production on Render, WebSocket runs on same host
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+        return `${protocol}//${window.location.hostname}:3001`
+    }
+    return 'ws://localhost:3001'
+}
+
 const RECONNECT_INTERVALS = [1000, 2000, 4000, 8000, 16000, 30000] // Exponential backoff
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
@@ -52,7 +64,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         setStatus('connecting')
 
         try {
-            const ws = new WebSocket(WS_URL)
+            const ws = new WebSocket(getWsUrl())
             wsRef.current = ws
 
             ws.onopen = () => {
