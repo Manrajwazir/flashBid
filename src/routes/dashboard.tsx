@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useSession, getCurrentUserId, setCurrentUserId } from '../lib/auth-client'
 import { useState, useEffect } from 'react'
-import { getUserBids, getUserAuctions, getWonAuctions, getSoldAuctions, deleteAuction } from '../server/functions'
+import { getUserBids, getUserAuctions, getWonAuctions, getSoldAuctions, deleteAuction, closeExpiredAuctions } from '../server/functions'
 import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { CompactCountdown } from '../components/ui/CountdownTimer'
@@ -40,6 +40,9 @@ function DashboardPage() {
             }
 
             try {
+                // First, ensure any expired auctions are processed so they show up in Won/Sold
+                await closeExpiredAuctions()
+
                 const [bidsResult, auctionsResult, wonResult, soldResult] = await Promise.all([
                     getUserBids({ data: { userId } } as any),
                     getUserAuctions({ data: { userId } } as any),
@@ -239,66 +242,99 @@ function MyBids({ bids }: { bids: any[] }) {
                 <div className="text-4xl mb-3">🔍</div>
                 <h3 className="text-base font-medium text-[#e6edf3] mb-1">No Bids Yet</h3>
                 <p className="text-sm text-[#8b949e] mb-4">Start bidding on auctions to see them here</p>
-                <Link to="/">
+                <Link to="/welcome">
                     <Button>Browse Auctions</Button>
                 </Link>
             </div>
         )
     }
 
+    // Helper to check if auction has ended
+    const isAuctionEnded = (auction: any) => {
+        return auction.status === 'CLOSED' || new Date(auction.endsAt) < new Date()
+    }
+
     return (
         <div className="space-y-3">
-            {bids.map((bid) => (
-                <Link
-                    key={bid.id}
-                    to="/auction/$auctionId"
-                    params={{ auctionId: bid.auction.id }}
-                    className="flex items-center gap-4 p-3 rounded-md border border-[#30363d] hover:border-[#8b949e] transition-colors bg-[#0d1117]"
-                >
-                    {bid.auction.imageUrl && (
-                        <img
-                            src={bid.auction.imageUrl}
-                            alt={bid.auction.title}
-                            className="w-16 h-16 object-cover rounded-md"
-                        />
-                    )}
+            {bids.map((bid) => {
+                const ended = isAuctionEnded(bid.auction)
+                const isWinner = bid.isWinning
 
-                    <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-[#e6edf3] text-sm truncate">{bid.auction.title}</h3>
-                        <p className="text-[#6e7681] text-xs line-clamp-1">{bid.auction.description}</p>
+                // Determine badge status
+                let badgeVariant: 'success' | 'danger' | 'warning' | 'neutral'
+                let badgeText: string
 
-                        <div className="flex items-center gap-4 mt-2">
-                            <div>
-                                <span className="text-xs text-[#6e7681]">Your Bid</span>
-                                <p className="font-mono font-semibold text-sm text-[#3fb950]">{formatCurrency(bid.amount)}</p>
-                            </div>
-                            <div>
-                                <span className="text-xs text-[#6e7681]">Current</span>
-                                <p className="font-mono font-semibold text-sm text-[#e6edf3]">{formatCurrency(bid.auction.currentPrice)}</p>
-                            </div>
-                            <div>
-                                <span className="text-xs text-[#6e7681]">Ends</span>
-                                <CompactCountdown endsAt={bid.auction.endsAt} />
+                if (ended) {
+                    if (isWinner) {
+                        badgeVariant = 'success'
+                        badgeText = '🏆 WON'
+                    } else {
+                        badgeVariant = 'danger'
+                        badgeText = '✗ LOST'
+                    }
+                } else {
+                    if (isWinner) {
+                        badgeVariant = 'warning'
+                        badgeText = '✓ WINNING'
+                    } else {
+                        badgeVariant = 'danger'
+                        badgeText = '✗ OUTBID'
+                    }
+                }
+
+                return (
+                    <Link
+                        key={bid.id}
+                        to="/auction/$auctionId"
+                        params={{ auctionId: bid.auction.id }}
+                        className={`flex items-center gap-4 p-3 rounded-md border transition-colors bg-[#0d1117] ${ended
+                            ? (isWinner ? 'border-[#238636]' : 'border-[#30363d] opacity-75')
+                            : 'border-[#30363d] hover:border-[#8b949e]'
+                            }`}
+                    >
+                        {bid.auction.imageUrl && (
+                            <img
+                                src={bid.auction.imageUrl}
+                                alt={bid.auction.title}
+                                className="w-16 h-16 object-cover rounded-md"
+                            />
+                        )}
+
+                        <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-[#e6edf3] text-sm truncate">{bid.auction.title}</h3>
+                            <p className="text-[#6e7681] text-xs line-clamp-1">{bid.auction.description}</p>
+
+                            <div className="flex items-center gap-4 mt-2">
+                                <div>
+                                    <span className="text-xs text-[#6e7681]">Your Bid</span>
+                                    <p className="font-mono font-semibold text-sm text-[#3fb950]">{formatCurrency(bid.amount)}</p>
+                                </div>
+                                <div>
+                                    <span className="text-xs text-[#6e7681]">{ended ? 'Final Price' : 'Current'}</span>
+                                    <p className="font-mono font-semibold text-sm text-[#e6edf3]">{formatCurrency(bid.auction.currentPrice)}</p>
+                                </div>
+                                <div>
+                                    <span className="text-xs text-[#6e7681]">{ended ? 'Status' : 'Ends'}</span>
+                                    {ended ? (
+                                        <p className="text-xs text-[#8b949e]">Ended</p>
+                                    ) : (
+                                        <CompactCountdown endsAt={bid.auction.endsAt} />
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="text-right flex-shrink-0">
-                        {bid.isWinning ? (
-                            <Badge variant="success">
-                                ✓ WINNING
+                        <div className="text-right flex-shrink-0">
+                            <Badge variant={badgeVariant}>
+                                {badgeText}
                             </Badge>
-                        ) : (
-                            <Badge variant="danger">
-                                ✗ OUTBID
-                            </Badge>
-                        )}
-                        <p className="text-xs text-[#6e7681] mt-1">
-                            {new Date(bid.createdAt).toLocaleDateString()}
-                        </p>
-                    </div>
-                </Link>
-            ))}
+                            <p className="text-xs text-[#6e7681] mt-1">
+                                {new Date(bid.createdAt).toLocaleDateString()}
+                            </p>
+                        </div>
+                    </Link>
+                )
+            })}
         </div>
     )
 }
@@ -370,15 +406,21 @@ function MyListings({
                                 <CompactCountdown endsAt={auction.endsAt} />
                             </td>
                             <td className="py-3 px-3 text-center">
-                                <Badge
-                                    variant={
-                                        auction.status === 'OPEN' ? 'success' :
-                                            auction.status === 'CLOSED' ? 'neutral' :
-                                                'danger'
+                                {/* Computed Status */}
+                                {(() => {
+                                    const isEnded = new Date(auction.endsAt) < new Date() || auction.status === 'CLOSED'
+                                    const hasBids = auction._count.bids > 0
+
+                                    if (isEnded) {
+                                        if (hasBids) {
+                                            return <Badge variant="success">SOLD</Badge>
+                                        } else {
+                                            return <Badge variant="neutral">EXPIRED</Badge>
+                                        }
+                                    } else {
+                                        return <Badge variant="success" className="animate-pulse">ACTIVE</Badge>
                                     }
-                                >
-                                    {auction.status}
-                                </Badge>
+                                })()}
                             </td>
                             <td className="py-3 px-3 text-center">
                                 {auction._count.bids === 0 ? (
