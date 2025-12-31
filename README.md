@@ -2,7 +2,7 @@
 
 A modern real-time auction platform with instant price updates, live bidding, and AI-powered features.
 
-## 🌐 Live Demo
+## 🌐 Live Demo (!!LIVE SITE IS DOWN AS OF RIGHT NOW WILL RE DEPLOY IT SOON!)
 
 | Service       | URL                                                          |
 | ------------- | ------------------------------------------------------------ |
